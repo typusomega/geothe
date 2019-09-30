@@ -1,5 +1,9 @@
 .directory
 .vscode/
 .idea/
+
 artifacts/
+
 data
+
+*.png
