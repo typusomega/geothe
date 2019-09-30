@@ -88,10 +88,10 @@ func TestBasic(t *testing.T) {
 	}
 
 	outFile, err := os.Create(fmt.Sprintf("out_e2e_basic_%s.png", time.Now().Format("RFC3339")))
-	defer outFile.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer outFile.Close()
 
 	xVals := make([]float64, lastEvent)
 	durations := make([]float64, lastEvent)

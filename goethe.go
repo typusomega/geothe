@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/sirupsen/logrus"
+	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/typusomega/goethe/pkg/api"
 	"github.com/typusomega/goethe/pkg/config"
 	"github.com/typusomega/goethe/pkg/spec"
@@ -24,18 +25,19 @@ func main() {
 		mainLog.Fatalf("could not create listener on address: %s", address)
 	}
 
-	storage, err := storage.New(cfg.StorageFile)
+	db, err := leveldb.OpenFile(cfg.StorageFile, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	apiServer := api.New(storage)
+	store := storage.New(db, &storage.UnixNanoIDGenerator{})
+	apiServer := api.New(store)
 	grpcServer := grpc.NewServer()
 	spec.RegisterGoetheServer(grpcServer, apiServer)
 
 	mainLog.Infof("started grpc server on '%v'", address)
 	if err := grpcServer.Serve(listener); err != nil {
-		storage.Close()
+		store.Close()
 		mainLog.Fatalf("failed to serve grpc: '%v'", err)
 	}
 }

@@ -50,7 +50,7 @@ func TestAPI_Publish(t *testing.T) {
 		{
 			name:  "stream receive eof",
 			given: func(storage *mocks.MockStorage) {},
-			when:  args{stream: publishServer(t, defaultContext, &validPublishRequest, io.EOF, nil)},
+			when:  args{stream: publishServer(defaultContext, t, &validPublishRequest, io.EOF, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
@@ -74,7 +74,7 @@ func TestAPI_Publish(t *testing.T) {
 		{
 			name:  "stream receive unknown error",
 			given: func(storage *mocks.MockStorage) {},
-			when:  args{stream: publishServer(t, defaultContext, nil, defaultErr, nil)},
+			when:  args{stream: publishServer(defaultContext, t, nil, errDefault, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
@@ -82,7 +82,7 @@ func TestAPI_Publish(t *testing.T) {
 		{
 			name:  "invalid request: no topic",
 			given: func(storage *mocks.MockStorage) { storage.EXPECT().Append(gomock.Any()).Times(0) },
-			when: args{stream: publishServer(t, defaultContext, &spec.PublishRequest{
+			when: args{stream: publishServer(defaultContext, t, &spec.PublishRequest{
 				Event: &spec.Event{Topic: &topic, Payload: []byte("123")},
 			}, status.New(codes.OK, "").Err(), nil)},
 			then: func(err error) {
@@ -92,7 +92,7 @@ func TestAPI_Publish(t *testing.T) {
 		{
 			name:  "invalid request: no event content",
 			given: func(storage *mocks.MockStorage) { storage.EXPECT().Append(gomock.Any()).Times(0) },
-			when: args{stream: publishServer(t, defaultContext, &spec.PublishRequest{
+			when: args{stream: publishServer(defaultContext, t, &spec.PublishRequest{
 				Topic: &topic,
 				Event: &spec.Event{Topic: &topic},
 			}, status.New(codes.OK, "").Err(), nil)},
@@ -103,9 +103,9 @@ func TestAPI_Publish(t *testing.T) {
 		{
 			name: "storage failure",
 			given: func(storage *mocks.MockStorage) {
-				storage.EXPECT().Append(gomock.Eq(&defaultPublishEvent)).Return(nil, defaultErr).Times(1)
+				storage.EXPECT().Append(gomock.Eq(&defaultPublishEvent)).Return(nil, errDefault).Times(1)
 			},
-			when: args{stream: oncePublishServer(t, defaultContext, status.New(codes.OK, "").Err())},
+			when: args{stream: oncePublishServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
@@ -115,9 +115,9 @@ func TestAPI_Publish(t *testing.T) {
 			given: func(storage *mocks.MockStorage) {
 				storage.EXPECT().Append(gomock.Eq(&defaultPublishEvent)).Return(&defaultEvent, nil).Times(1)
 			},
-			when: args{stream: oncePublishServer(t, defaultContext, defaultErr)},
+			when: args{stream: oncePublishServer(defaultContext, t, errDefault)},
 			then: func(err error) {
-				assert.Equal(t, defaultErr, err)
+				assert.Equal(t, errDefault, err)
 			},
 		},
 	}
@@ -192,7 +192,7 @@ func TestAPI_Stream(t *testing.T) {
 		{
 			name:  "stream receive unknown error",
 			given: func(storage *mocks.MockStorage) {},
-			when:  args{stream: streamServer(t, defaultContext, nil, defaultErr, nil)},
+			when:  args{stream: streamServer(defaultContext, t, nil, errDefault, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
@@ -200,7 +200,7 @@ func TestAPI_Stream(t *testing.T) {
 		{
 			name:  "invalid cursor: no serviceID",
 			given: func(storage *mocks.MockStorage) { storage.EXPECT().Read(gomock.Any()).Times(0) },
-			when: args{stream: streamServer(t, defaultContext, &spec.Cursor{
+			when: args{stream: streamServer(defaultContext, t, &spec.Cursor{
 				Topic:        &topic,
 				CurrentEvent: &defaultEvent,
 			}, status.New(codes.OK, "").Err(), nil)},
@@ -211,7 +211,7 @@ func TestAPI_Stream(t *testing.T) {
 		{
 			name:  "invalid cursor: no topic",
 			given: func(storage *mocks.MockStorage) { storage.EXPECT().Read(gomock.Any()).Times(0) },
-			when: args{stream: streamServer(t, defaultContext, &spec.Cursor{
+			when: args{stream: streamServer(defaultContext, t, &spec.Cursor{
 				ServiceId:    serviceID,
 				CurrentEvent: &defaultEvent,
 			}, status.New(codes.OK, "").Err(), nil)},
@@ -222,9 +222,9 @@ func TestAPI_Stream(t *testing.T) {
 		{
 			name: "storage unkown failure",
 			given: func(storage *mocks.MockStorage) {
-				storage.EXPECT().Read(gomock.Eq(&validCursor)).Return(nil, defaultErr).Times(1)
+				storage.EXPECT().Read(gomock.Eq(&validCursor)).Return(nil, errDefault).Times(1)
 			},
-			when: args{stream: onceStreamServer(t, defaultContext, status.New(codes.OK, "").Err())},
+			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
@@ -234,7 +234,7 @@ func TestAPI_Stream(t *testing.T) {
 			given: func(storage *mocks.MockStorage) {
 				storage.EXPECT().Read(gomock.Eq(&validCursor)).Return(nil, errors.ResourceExhaustedError.New("fail")).Times(1)
 			},
-			when: args{stream: onceStreamServer(t, defaultContext, status.New(codes.OK, "").Err())},
+			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.ResourceExhausted, getStatusCode(err))
 			},
@@ -244,7 +244,7 @@ func TestAPI_Stream(t *testing.T) {
 			given: func(storage *mocks.MockStorage) {
 				storage.EXPECT().Read(gomock.Eq(&validCursor)).Return(nil, errors.NotFound.New("fail")).Times(1)
 			},
-			when: args{stream: onceStreamServer(t, defaultContext, status.New(codes.OK, "").Err())},
+			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.NotFound, getStatusCode(err))
 			},
@@ -254,9 +254,9 @@ func TestAPI_Stream(t *testing.T) {
 			given: func(storage *mocks.MockStorage) {
 				storage.EXPECT().Read(gomock.Eq(&validCursor)).Return(&validCursor, nil).Times(1)
 			},
-			when: args{stream: onceStreamServer(t, defaultContext, defaultErr)},
+			when: args{stream: onceStreamServer(defaultContext, t, errDefault)},
 			then: func(err error) {
-				assert.Equal(t, defaultErr, err)
+				assert.Equal(t, errDefault, err)
 			},
 		},
 	}
@@ -279,24 +279,24 @@ func TestAPI_Stream(t *testing.T) {
 func contextCancelledPublishServer(t *testing.T) spec.Goethe_PublishServer {
 	ctx, cncl := context.WithCancel(context.Background())
 	cncl()
-	return publishServer(t, ctx, &validPublishRequest, nil, nil)
+	return publishServer(ctx, t, &validPublishRequest, nil, nil)
 }
 
 func contextCancelledStreamServer(t *testing.T) spec.Goethe_StreamServer {
 	ctx, cncl := context.WithCancel(context.Background())
 	cncl()
-	return streamServer(t, ctx, &validCursor, nil, nil)
+	return streamServer(ctx, t, &validCursor, nil, nil)
 }
 
 func statusCodePublishServer(t *testing.T, code codes.Code) *mocks.MockGoethe_PublishServer {
-	return publishServer(t, defaultContext, &validPublishRequest, status.New(code, "fail").Err(), nil)
+	return publishServer(defaultContext, t, &validPublishRequest, status.New(code, "fail").Err(), nil)
 }
 
 func statusCodeStreamServer(t *testing.T, code codes.Code) *mocks.MockGoethe_StreamServer {
-	return streamServer(t, defaultContext, &validCursor, status.New(code, "fail").Err(), nil)
+	return streamServer(defaultContext, t, &validCursor, status.New(code, "fail").Err(), nil)
 }
 
-func publishServer(t *testing.T, ctx context.Context, request *spec.PublishRequest, recvErr error, sendErr error) *mocks.MockGoethe_PublishServer {
+func publishServer(ctx context.Context, t *testing.T, request *spec.PublishRequest, recvErr error, sendErr error) *mocks.MockGoethe_PublishServer {
 	mock := mocks.NewMockGoethe_PublishServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	mock.EXPECT().Recv().Return(request, recvErr).AnyTimes()
@@ -304,7 +304,7 @@ func publishServer(t *testing.T, ctx context.Context, request *spec.PublishReque
 	return mock
 }
 
-func streamServer(t *testing.T, ctx context.Context, cursor *spec.Cursor, recvErr error, sendErr error) *mocks.MockGoethe_StreamServer {
+func streamServer(ctx context.Context, t *testing.T, cursor *spec.Cursor, recvErr error, sendErr error) *mocks.MockGoethe_StreamServer {
 	mock := mocks.NewMockGoethe_StreamServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	mock.EXPECT().Recv().Return(cursor, recvErr).AnyTimes()
@@ -312,7 +312,7 @@ func streamServer(t *testing.T, ctx context.Context, cursor *spec.Cursor, recvEr
 	return mock
 }
 
-func oncePublishServer(t *testing.T, ctx context.Context, err error) *mocks.MockGoethe_PublishServer {
+func oncePublishServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_PublishServer {
 	mock := mocks.NewMockGoethe_PublishServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	done := false
@@ -344,7 +344,7 @@ func threeRequestsPublishServer(t *testing.T) *mocks.MockGoethe_PublishServer {
 	return mock
 }
 
-func onceStreamServer(t *testing.T, ctx context.Context, err error) *mocks.MockGoethe_StreamServer {
+func onceStreamServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_StreamServer {
 	mock := mocks.NewMockGoethe_StreamServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	done := false
@@ -376,11 +376,7 @@ func threeCursorStreamServer(t *testing.T) *mocks.MockGoethe_StreamServer {
 	return mock
 }
 
-func defaultPublishServer(t *testing.T) *mocks.MockGoethe_PublishServer {
-	return publishServer(t, defaultContext, &validPublishRequest, nil, nil)
-}
-
-var defaultErr = fmt.Errorf("fail")
+var errDefault = fmt.Errorf("fail")
 var topicID = "hello_world"
 var topic = spec.Topic{Id: topicID}
 var serviceID = "default"

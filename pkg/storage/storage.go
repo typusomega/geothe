@@ -10,6 +10,9 @@ import (
 	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 )
@@ -20,21 +23,24 @@ type Storage interface {
 	Read(cursor *spec.Cursor) (*spec.Cursor, error)
 }
 
-func New(file string) (Storage, error) {
-	db, err := leveldb.OpenFile(file, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &DiskStorage{db: db}, nil
+func New(db LevelDB, idGenerator IDGenerator) Storage {
+	return &DiskStorage{db: db, ids: idGenerator}
 }
 
 type DiskStorage struct {
-	db *leveldb.DB
+	db  LevelDB
+	ids IDGenerator
+}
+
+type LevelDB interface {
+	io.Closer
+	Write(batch *leveldb.Batch, wo *opt.WriteOptions) error
+	NewIterator(slice *util.Range, ro *opt.ReadOptions) iterator.Iterator
 }
 
 func (it *DiskStorage) Append(event *spec.Event) (*spec.Event, error) {
 	topic := event.GetTopic()
-	eventToStore := &spec.Event{Id: getNextID(), Topic: topic, Payload: event.GetPayload()}
+	eventToStore := &spec.Event{Id: it.ids.Next(), Topic: topic, Payload: event.GetPayload()}
 
 	serializedEvent, err := serializeEvent(eventToStore)
 	if err != nil {
