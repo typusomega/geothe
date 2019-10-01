@@ -1,15 +1,47 @@
 # Goethe
 
-Goethe is a lightweight append only log server. It's meant to be used in event driven systems to enable patterns like event sourcing.
+Goethe is a lightweight append-only event log server. It's meant to be used in event driven systems to enable patterns like event sourcing.
 
-## Roadmap
+## TODOs
 
-| Feature                  | Description                                                                                                                                                                                      | State  |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| Cursor storage           | Consumer cursors should be stored in the server to remember the consumer's current cursor position                                                                                               | _TODO_ |
-| Nearest Cursor selection | If a consumer provides a non-existing cursor position, the cursor should automatically point to the nearest event. This might be useful for replays from a certain point in time like 2019-05-03 | _TODO_ |
-| Distribution             | Goether server instances should be scalable and therefore need some sort of synchronization mechanism                                                                                            | _TODO_ |
+| Feature                   | Description                                                                                                                                                                                      | State  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Time based event index    | We need an event index to allow for seeking to a given point in time. This index needs to be on a configurable basis---like 1h, 1d---where we capture the last event and store them in the db    | _TODO_ |
+| Nearest Cursor selection  | If a consumer provides a non-existing cursor position, the cursor should automatically point to the nearest event. This might be useful for replays from a certain point in time like 2019-05-03 | _TODO_ |
+| Cursor storage            | Consumer cursors should be stored in the server to remember the consumer's current cursor position.                                                                                              | _TODO_ |
+| Service discovery K8s     | Goethe server instances need to be able to discover members of a cluster. At first we will stick to K8s features to do so.                                                                       | _TODO_ |
+| Leader election K8s       | Goethe server instances should be able to select a leader which is the master writer in the cluster. At first we will stick to K8s features to do so.                                            | _TODO_ |
+| Leader write distribution | Goethe Leaders have to make sure writes are persisted on all Geother instances in the cluster.                                                                                                   | _TODO_ |
+| Gossip                    | Goethe server instances need to at least inform each others about there health state                                                                                                             | _TODO_ |
+
 ## Architecture
+
+### Concepts
+
+Goethe is meant to be the event store in event driven systems. This section shall guide you through the top level concepts.
+
+#### Events
+
+Event driven systems use events as their main communication channels. Events are basically facts about things that happend in the system. Naturally, events are immutable, they are facts. This is why having an append-only event log in an event driven system seems to make sense.
+
+Goethe does not put any constraints on the events you want to be flowing through your system, and you will find a lot of good advise like in the [CloudEvents Spec](https://github.com/cloudevents/spec).
+We consider events as plain old byte arrays, for you to have the complete freedom about what you are doing.
+
+#### Cursors
+
+We want to deliver maximum ease to Goethe clients. The default usecase for a topic consumer is to start we she left off before.
+Of course there are times when replays are necessary and a consumer wants to read a complete topic from its beginnig.
+
+This is why we think about cursors owned by a certain service pointing to a certain event in a certain topic.
+
+__Future Features__:  
+
+If a consumer wants to read events from a topic at a specific point in time, she can just provide a cursor pointing to that time.
+
+If a consumer wants to read from the point where she left off, she leaves the cursor's `current_event` blank and Goethe starts from the last known cursor position of the service.
+
+In cases where consumers start to become slow, you might start scaling the consumer service horizontally to increase performance and share the load among the instances.
+This is also something which can be addressed by the use of proper cursors. If multiple instances use the same serviceID, the service's cursor is moved for all instances.
 
 ### Storage
 
