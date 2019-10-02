@@ -7,8 +7,7 @@ Goethe is a lightweight append-only event log server. It's meant to be used in e
 | Feature                   | Description                                                                                                                                                                                      | State  |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
 | Time based event index    | We need an event index to allow for seeking to a given point in time. This index needs to be on a configurable basis---like 1h, 1d---where we capture the last event and store them in the db    | _TODO_ |
-| Nearest Cursor selection  | If a consumer provides a non-existing cursor position, the cursor should automatically point to the nearest event. This might be useful for replays from a certain point in time like 2019-05-03 | _TODO_ |
-| Cursor storage            | Consumer cursors should be stored in the server to remember the consumer's current cursor position.                                                                                              | _TODO_ |
+| Nearest Cursor selection  | If a consumer provides a non-existing cursor position, the cursor should automatically point to the nearest event. This might be useful for replays from a certain point in time like 2019-05-03 | _TODO_ |                                                                                    | _TODO_ |
 | Service discovery K8s     | Goethe server instances need to be able to discover members of a cluster. At first we will stick to K8s features to do so.                                                                       | _TODO_ |
 | Leader election K8s       | Goethe server instances should be able to select a leader which is the master writer in the cluster. At first we will stick to K8s features to do so.                                            | _TODO_ |
 | Leader write distribution | Goethe Leaders have to make sure writes are persisted on all Geother instances in the cluster.                                                                                                   | _TODO_ |
@@ -34,11 +33,12 @@ Of course there are times when replays are necessary and a consumer wants to rea
 
 This is why we think about cursors owned by a certain service pointing to a certain event in a certain topic.
 
+A consumer is able to tell Goethe the a specific event to start consuming from. This might be because the consumer stored her last known position or to replay events since a certain occurence.
+For consumers' convenience we also enable reading from where a consumer left off by leaving the cursor's `current_event` field blank and Goethe starts from server's the last known cursor position of the service.
+
 __Future Features__:  
 
-If a consumer wants to read events from a topic at a specific point in time, she can just provide a cursor pointing to that time.
-
-If a consumer wants to read from the point where she left off, she leaves the cursor's `current_event` blank and Goethe starts from the last known cursor position of the service.
+If a consumer wants to read events from a topic at a specific point in time, she can just provide a cursor pointing to that time. Goethe will select the next event which was commited after that time.
 
 In cases where consumers start to become slow, you might start scaling the consumer service horizontally to increase performance and share the load among the instances.
 This is also something which can be addressed by the use of proper cursors. If multiple instances use the same serviceID, the service's cursor is moved for all instances.

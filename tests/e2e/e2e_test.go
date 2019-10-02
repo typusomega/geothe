@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"testing"
@@ -30,7 +31,7 @@ func TestBasic(t *testing.T) {
 	ctx, cncl := context.WithCancel(context.Background())
 	defer cncl()
 
-	lastEvent := 10000
+	lastEvent := 100000
 	publishTimestamps := make([]int64, lastEvent)
 	consumptionTimestamps := make([]int64, lastEvent)
 
@@ -58,12 +59,22 @@ func TestBasic(t *testing.T) {
 
 	t.Log("starting consumption")
 	go func() {
-		err := consumer.ReadBlocking(ctx, &spec.Cursor{Topic: topic, ServiceId: "default"}, cursors)
-		if err != nil {
-			if st, _ := status.FromError(err); st.Code() != codes.Canceled {
-				panic(err)
+		for {
+			err = consumer.ReadBlocking(ctx, &spec.Cursor{Topic: topic, ServiceId: "default"}, cursors)
+			if err != nil {
+				if err == io.EOF {
+					continue
+				}
+				status, _ := status.FromError(err)
+				switch status.Code() {
+				case codes.ResourceExhausted:
+					continue
+				default:
+					panic(err)
+				}
 			}
 		}
+
 	}()
 
 	lastValue := -1

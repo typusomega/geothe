@@ -7,14 +7,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
-	"github.com/typusomega/goethe/pkg/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // New creates a new API instance
-func New(storage storage.Storage) *API {
-	return &API{storage: storage}
+func New(producer Producer, consumer Consumer) *API {
+	return &API{producer: producer, consumer: consumer}
 }
 
 // Publish is a bidi-stream publish command
@@ -24,7 +23,6 @@ func (it *API) Publish(stream spec.Goethe_PublishServer) error {
 		case <-stream.Context().Done():
 			return nil
 		default:
-
 			request, err := stream.Recv()
 			exit, err := handleStreamError(err)
 			if exit {
@@ -37,7 +35,7 @@ func (it *API) Publish(stream spec.Goethe_PublishServer) error {
 				return err
 			}
 
-			event, err := it.storage.Append(request.GetEvent())
+			event, err := it.producer.Publish(request.GetEvent())
 			if err != nil {
 				logrus.WithError(err).Errorf("could not store event: '%v' in topic: '%v'", request.GetEvent(), request.GetTopic())
 				return status.Newf(codes.Internal, "could not store event: '%v' in topic: '%v'", request.GetEvent(), request.GetTopic()).Err()
@@ -73,8 +71,8 @@ func (it *API) Stream(stream spec.Goethe_StreamServer) error {
 			return err
 		}
 
-		newCursor, err := it.storage.Read(cursor)
-		if err = handleStorageReadError(newCursor, err); err != nil {
+		newCursor, err := it.consumer.Stream(cursor)
+		if err = handleReadError(newCursor, err); err != nil {
 			return err
 		}
 
@@ -110,7 +108,7 @@ func verifyCursor(cursor *spec.Cursor) error {
 	return nil
 }
 
-func handleStorageReadError(cursor *spec.Cursor, err error) error {
+func handleReadError(cursor *spec.Cursor, err error) error {
 	if err != nil {
 		if errorx.HasTrait(err, errorx.NotFound()) {
 			logrus.WithError(err).Info("client cursor not found")
@@ -146,5 +144,6 @@ func handleStreamError(err error) (bool, error) {
 
 // API is the implementation of the grpc API
 type API struct {
-	storage storage.Storage
+	producer Producer
+	consumer Consumer
 }

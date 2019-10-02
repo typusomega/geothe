@@ -63,6 +63,7 @@ func TestDiskStorage_Append(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			controller := gomock.NewController(t)
+			defer controller.Finish()
 			dbMock := mocks.NewMockLevelDB(controller)
 			idGeneratorMock := mocks.NewMockIDGenerator(controller)
 			idGeneratorMock.EXPECT().Next().Return(generatedID).AnyTimes()
@@ -92,11 +93,11 @@ func TestDiskStorage_Read(t *testing.T) {
 			given: func(db *mocks.MockLevelDB, iterator *mocks.MockIterator) {
 				iterator.EXPECT().Release().Times(1)
 				iterator.EXPECT().Seek(gomock.Any()).DoAndReturn(func(key []byte) bool {
-					assert.Equal(t, key, defaultCursorKey)
+					assert.Equal(t, key, defaultCursorEventKey)
 					return true
 				}).Times(1)
 				iterator.EXPECT().Next().Return(true).Times(1)
-				iterator.EXPECT().Key().Return(defaultCursorKey).Times(1)
+				iterator.EXPECT().Key().Return(defaultCursorEventKey).Times(1)
 				iterator.EXPECT().Value().Return(marshalledExpectedEvent()).Times(1)
 			},
 			when: args{cursor: &defaultCursor},
@@ -112,7 +113,7 @@ func TestDiskStorage_Read(t *testing.T) {
 				iterator.EXPECT().Release().Times(1)
 				iterator.EXPECT().Seek(gomock.Any()).Times(0)
 				iterator.EXPECT().Next().Return(true).Times(1)
-				iterator.EXPECT().Key().Return(defaultCursorKey).Times(1)
+				iterator.EXPECT().Key().Return(defaultCursorEventKey).Times(1)
 				iterator.EXPECT().Value().Return(marshalledExpectedEvent()).Times(1)
 			},
 			when: args{cursor: &spec.Cursor{Topic: &defaultTopic, ServiceId: defaultServiceID}},
@@ -139,6 +140,7 @@ func TestDiskStorage_Read(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			controller := gomock.NewController(t)
+			defer controller.Finish()
 			dbMock := mocks.NewMockLevelDB(controller)
 			iteratorMock := mocks.NewMockIterator(controller)
 			dbMock.EXPECT().NewIterator(gomock.Any(), gomock.Any()).Return(iteratorMock).AnyTimes()
@@ -153,19 +155,76 @@ func TestDiskStorage_Read(t *testing.T) {
 	}
 }
 
-func TestDiskStorage_Close(t *testing.T) {
-	controller := gomock.NewController(t)
-	dbMock := mocks.NewMockLevelDB(controller)
-	it := storage.New(dbMock, nil)
+func TestDiskStorage_GetCursorFor(t *testing.T) {
+	type args struct {
+		serviceID string
+		topic     string
+	}
+	tests := []struct {
+		name  string
+		given func(db *mocks.MockLevelDB)
+		when  args
+		then  func(cursor *spec.Cursor, err error)
+	}{
+		{
+			name: "cursor not found",
+			given: func(db *mocks.MockLevelDB) {
+				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, leveldb.ErrNotFound).Times(1)
+			},
+			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			then: func(cursor *spec.Cursor, err error) {
+				assert.NotNil(t, err)
+				assert.True(t, errorx.HasTrait(err, errorx.NotFound()))
+			},
+		},
+		{
+			name: "unknown error",
+			given: func(db *mocks.MockLevelDB) {
+				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, errDefault).Times(1)
+			},
+			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			then: func(cursor *spec.Cursor, err error) {
+				assert.Equal(t, errDefault, err)
+			},
+		},
+		{
+			name: "cursor found",
+			given: func(db *mocks.MockLevelDB) {
+				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(marshalledDefaultCursor(), nil).Times(1)
+			},
+			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			then: func(cursor *spec.Cursor, err error) {
+				assert.Nil(t, err)
+				assertCursorEquals(t, &defaultCursor, cursor)
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			controller := gomock.NewController(t)
+			defer controller.Finish()
+			dbMock := mocks.NewMockLevelDB(controller)
+			if tt.given != nil {
+				tt.given(dbMock)
+			}
 
-	dbMock.EXPECT().Close().Times(1)
-	it.Close()
+			it := storage.New(dbMock, nil)
+			got, err := it.GetCursorFor(tt.when.serviceID, tt.when.topic)
+			tt.then(got, err)
+		})
+	}
 }
 
 func assertEventEquals(t *testing.T, expected *spec.Event, actual *spec.Event) {
 	assert.Equal(t, expected.GetId(), actual.GetId())
 	assert.Equal(t, expected.GetTopic().GetId(), actual.GetTopic().GetId())
 	assert.Equal(t, expected.GetPayload(), actual.GetPayload())
+}
+func assertCursorEquals(t *testing.T, expected *spec.Cursor, actual *spec.Cursor) {
+	assert.Equal(t, expected.GetTopic().GetId(), actual.GetTopic().GetId())
+	assert.Equal(t, expected.GetServiceId(), actual.GetServiceId())
+	assertEventEquals(t, expected.GetCurrentEvent(), actual.GetCurrentEvent())
 }
 
 var errDefault = fmt.Errorf("fail")
@@ -182,10 +241,19 @@ var defaultEvent = spec.Event{
 	Payload: []byte("123"),
 }
 
-var defaultCursorKey = []byte(defaultCursor.GetTopic().GetId() + storage.KeySeperator + defaultCursor.GetCurrentEvent().GetId())
+var defaultCursorEventKey = []byte(defaultCursor.GetTopic().GetId() + storage.KeySeperator + defaultCursor.GetCurrentEvent().GetId())
+var defaultCursorCursorKey = []byte(storage.CursorPrefix + storage.KeySeperator + defaultCursor.GetServiceId() + storage.KeySeperator + defaultCursor.GetTopic().GetId())
 
 func marshalledExpectedEvent() []byte {
 	bytes, err := proto.Marshal(&expectedEvent)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
+func marshalledDefaultCursor() []byte {
+	bytes, err := proto.Marshal(&defaultCursor)
 	if err != nil {
 		panic(err)
 	}

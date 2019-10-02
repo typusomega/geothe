@@ -31,13 +31,15 @@ func main() {
 	}
 
 	store := storage.New(db, &storage.UnixNanoIDGenerator{})
-	apiServer := api.New(store)
+	producer := api.NewProducer(store)
+	consumer := api.NewConsumer(store, store)
+	apiServer := api.New(producer, consumer)
 	grpcServer := grpc.NewServer()
 	spec.RegisterGoetheServer(grpcServer, apiServer)
 
 	mainLog.Infof("started grpc server on '%v'", address)
 	if err := grpcServer.Serve(listener); err != nil {
-		store.Close()
+		db.Close()
 		mainLog.Fatalf("failed to serve grpc: '%v'", err)
 	}
 }

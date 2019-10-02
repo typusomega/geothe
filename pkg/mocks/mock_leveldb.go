@@ -51,6 +51,21 @@ func (mr *MockLevelDBMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockLevelDB)(nil).Close))
 }
 
+// Get mocks base method
+func (m *MockLevelDB) Get(arg0 []byte, arg1 *opt.ReadOptions) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get
+func (mr *MockLevelDBMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockLevelDB)(nil).Get), arg0, arg1)
+}
+
 // NewIterator mocks base method
 func (m *MockLevelDB) NewIterator(arg0 *util.Range, arg1 *opt.ReadOptions) iterator.Iterator {
 	m.ctrl.T.Helper()

@@ -2,12 +2,9 @@ package client
 
 import (
 	"context"
-	"io"
 
 	"github.com/typusomega/goethe/pkg/spec"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Client interface {
@@ -87,26 +84,6 @@ func (it *client) ReadBlocking(ctx context.Context, startCursor *spec.Cursor, ou
 			}
 
 			newCursor, err := readStream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					continue
-				}
-
-				status, _ := status.FromError(err)
-				switch status.Code() {
-				case codes.ResourceExhausted:
-					_ = readStream.CloseSend()
-					readStream, err = it.service.Stream(ctx)
-					if err != nil {
-						return err
-					}
-					continue
-
-				default:
-					return err
-				}
-			}
-
 			if err != nil {
 				return err
 			}

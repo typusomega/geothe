@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/typusomega/goethe/pkg/client"
 	"github.com/typusomega/goethe/pkg/spec"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -88,19 +91,27 @@ func (it *ReadCommand) Execute(args []string) error {
 		}
 	}()
 
-	err = client.ReadBlocking(ctx, &spec.Cursor{
-		Topic:     &spec.Topic{Id: it.opts.Topic},
-		ServiceId: it.ServiceID,
-		CurrentEvent: &spec.Event{
-			Id: it.Positionals.LastEvent,
-		},
-	}, cursors)
-
-	if err != nil {
-		status, _ := status.FromError(err)
-		println(fmt.Sprintf("got status %v with error: %v", status.Code(), status.Err()))
-		return err
+	for {
+		err = client.ReadBlocking(ctx, &spec.Cursor{
+			Topic:     &spec.Topic{Id: it.opts.Topic},
+			ServiceId: it.ServiceID,
+			CurrentEvent: &spec.Event{
+				Id: it.Positionals.LastEvent,
+			},
+		}, cursors)
+		if err != nil {
+			if err == io.EOF {
+				continue
+			}
+			status, _ := status.FromError(err)
+			switch status.Code() {
+			case codes.ResourceExhausted:
+				time.Sleep(time.Second)
+				continue
+			default:
+				println(fmt.Sprintf("got status %v with error: %v", status.Code(), status.Err()))
+				return err
+			}
+		}
 	}
-
-	return nil
 }
