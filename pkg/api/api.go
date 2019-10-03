@@ -101,7 +101,7 @@ func verifyProduceEvent(event *spec.Event) error {
 }
 
 func verifyCursor(cursor *spec.Cursor) error {
-	if cursor.GetServiceId() == "" {
+	if cursor.GetConsumer() == "" {
 		return status.New(codes.InvalidArgument, "cursor's service id must be set").Err()
 	}
 
@@ -119,7 +119,7 @@ func handleReadError(cursor *spec.Cursor, err error) error {
 			return status.New(codes.NotFound, err.Error()).Err()
 		}
 		if errorx.HasTrait(err, errors.ResourceExhausted()) {
-			logrus.WithError(err).Debugf("service '%v' exhausted topic '%v'", cursor.GetServiceId(), cursor.GetTopic())
+			logrus.WithError(err).Debugf("service '%v' exhausted topic '%v'", cursor.GetConsumer(), cursor.GetTopic())
 			return status.New(codes.ResourceExhausted, err.Error()).Err()
 		}
 		return status.New(codes.Internal, err.Error()).Err()

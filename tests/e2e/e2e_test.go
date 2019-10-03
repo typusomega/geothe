@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 	t.Log("starting consumption")
 	go func() {
 		for {
-			err = consumer.ConsumeBlocking(ctx, &spec.Cursor{Topic: topic, ServiceId: "default"}, cursors)
+			err = consumer.ConsumeBlocking(ctx, &spec.Cursor{Topic: topic, Consumer: "default"}, cursors)
 			if err != nil {
 				if err == io.EOF {
 					continue

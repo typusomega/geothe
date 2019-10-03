@@ -103,7 +103,7 @@ func TestDiskStorage_Read(t *testing.T) {
 			when: args{cursor: &defaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assertEventEquals(t, &expectedEvent, cursor.GetCurrentEvent())
-				assert.Equal(t, defaultServiceID, cursor.GetServiceId())
+				assert.Equal(t, defaultServiceID, cursor.GetConsumer())
 				assert.Equal(t, defaultTopic.GetId(), cursor.GetTopic().GetId())
 			},
 		},
@@ -116,10 +116,10 @@ func TestDiskStorage_Read(t *testing.T) {
 				iterator.EXPECT().Key().Return(defaultCursorEventKey).Times(1)
 				iterator.EXPECT().Value().Return(marshalledExpectedEvent()).Times(1)
 			},
-			when: args{cursor: &spec.Cursor{Topic: &defaultTopic, ServiceId: defaultServiceID}},
+			when: args{cursor: &spec.Cursor{Topic: &defaultTopic, Consumer: defaultServiceID}},
 			then: func(cursor *spec.Cursor, err error) {
 				assertEventEquals(t, &expectedEvent, cursor.GetCurrentEvent())
-				assert.Equal(t, defaultServiceID, cursor.GetServiceId())
+				assert.Equal(t, defaultServiceID, cursor.GetConsumer())
 				assert.Equal(t, defaultTopic.GetId(), cursor.GetTopic().GetId())
 			},
 		},
@@ -130,7 +130,7 @@ func TestDiskStorage_Read(t *testing.T) {
 				iterator.EXPECT().Seek(gomock.Any()).Times(0)
 				iterator.EXPECT().Next().Return(false).Times(1)
 			},
-			when: args{cursor: &spec.Cursor{Topic: &defaultTopic, ServiceId: defaultServiceID}},
+			when: args{cursor: &spec.Cursor{Topic: &defaultTopic, Consumer: defaultServiceID}},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.True(t, errorx.HasTrait(err, errors.ResourceExhausted()))
 			},
@@ -280,7 +280,7 @@ func assertEventEquals(t *testing.T, expected *spec.Event, actual *spec.Event) {
 }
 func assertCursorEquals(t *testing.T, expected *spec.Cursor, actual *spec.Cursor) {
 	assert.Equal(t, expected.GetTopic().GetId(), actual.GetTopic().GetId())
-	assert.Equal(t, expected.GetServiceId(), actual.GetServiceId())
+	assert.Equal(t, expected.GetConsumer(), actual.GetConsumer())
 	assertEventEquals(t, expected.GetCurrentEvent(), actual.GetCurrentEvent())
 }
 
@@ -299,7 +299,7 @@ var defaultEvent = spec.Event{
 }
 
 var defaultCursorEventKey = []byte(defaultCursor.GetTopic().GetId() + storage.KeySeperator + defaultCursor.GetCurrentEvent().GetId())
-var defaultCursorCursorKey = []byte(storage.CursorPrefix + storage.KeySeperator + defaultCursor.GetServiceId() + storage.KeySeperator + defaultCursor.GetTopic().GetId())
+var defaultCursorCursorKey = []byte(storage.CursorPrefix + storage.KeySeperator + defaultCursor.GetConsumer() + storage.KeySeperator + defaultCursor.GetTopic().GetId())
 
 func marshalledExpectedEvent() []byte {
 	bytes, err := proto.Marshal(&expectedEvent)
@@ -319,7 +319,7 @@ func marshalledDefaultCursor() []byte {
 
 var defaultCursor = spec.Cursor{
 	Topic:        &defaultTopic,
-	ServiceId:    defaultServiceID,
+	Consumer:     defaultServiceID,
 	CurrentEvent: &defaultEvent,
 }
 

@@ -8,9 +8,9 @@ import (
 // Config is used to configure the service
 type Config struct {
 	Port           int    `envconfig:"PORT" default:"1337"`
+	PrometheusPort int    `envconfig:"PROMETHEUS_PORT" default:"5000"`
 	LogLevel       string `envconfig:"LOG_LEVEL" default:"INFO"`
 	StorageFile    string `envconfig:"STORAGE_FILE" default:"/var/lib/goethe/data"`
-	PrometheusPort int    `envconfig:"PROMETHEUS_PORT" default:"5000"`
 }
 
 // Get retrieves the config from environment

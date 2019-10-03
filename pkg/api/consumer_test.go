@@ -45,7 +45,7 @@ func Test_consumer_Stream(t *testing.T) {
 		{
 			name: "no event ID set, storage success",
 			given: func(cursorStorage *mocks.MockCursorStorage, eventStorage *mocks.MockEventStorage) {
-				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetServiceId())).Return(&defaultCursor, nil).Times(1)
+				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetConsumer())).Return(&defaultCursor, nil).Times(1)
 				eventStorage.EXPECT().Read(gomock.Eq(&defaultCursor)).Return(&foundCursor, nil).Times(1)
 				cursorStorage.EXPECT().SaveCursor(gomock.Eq(&foundCursor)).Times(1).Return(nil)
 			},
@@ -58,7 +58,7 @@ func Test_consumer_Stream(t *testing.T) {
 		{
 			name: "no event ID set, cursor storage failure",
 			given: func(cursorStorage *mocks.MockCursorStorage, eventStorage *mocks.MockEventStorage) {
-				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetServiceId())).Return(nil, errDefault).Times(1)
+				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetConsumer())).Return(nil, errDefault).Times(1)
 				eventStorage.EXPECT().Read(gomock.Any()).Return(&foundCursor, nil).Times(0)
 				cursorStorage.EXPECT().SaveCursor(gomock.Any()).Times(0).Return(nil)
 			},
@@ -97,7 +97,7 @@ func Test_consumer_Stream(t *testing.T) {
 		{
 			name: "no event ID set, save cursor failure",
 			given: func(cursorStorage *mocks.MockCursorStorage, eventStorage *mocks.MockEventStorage) {
-				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetServiceId())).Return(&defaultCursor, nil).Times(1)
+				cursorStorage.EXPECT().GetCursorFor(gomock.Eq(noEventIDCurser.GetTopic().GetId()), gomock.Eq(noEventIDCurser.GetConsumer())).Return(&defaultCursor, nil).Times(1)
 				eventStorage.EXPECT().Read(gomock.Eq(&defaultCursor)).Return(&foundCursor, nil).Times(1)
 				cursorStorage.EXPECT().SaveCursor(gomock.Any()).Times(0).Return(errDefault).Times(1)
 			},
@@ -141,19 +141,19 @@ func Test_consumer_Stream(t *testing.T) {
 
 var defaultCursor = spec.Cursor{
 	Topic:        &topic,
-	ServiceId:    serviceID,
+	Consumer:     consumer,
 	CurrentEvent: &defaultEvent,
 }
 
 var foundCursor = spec.Cursor{
 	Topic:        &topic,
-	ServiceId:    serviceID,
+	Consumer:     consumer,
 	CurrentEvent: &defaultEvent,
 }
 
 var noEventIDCurser = spec.Cursor{
-	Topic:     &topic,
-	ServiceId: serviceID,
+	Topic:    &topic,
+	Consumer: consumer,
 	CurrentEvent: &spec.Event{
 		Topic:   &topic,
 		Payload: []byte("just testing"),

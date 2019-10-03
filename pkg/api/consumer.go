@@ -24,7 +24,7 @@ func (it *consumer) Consume(cursor *spec.Cursor) (*spec.Cursor, error) {
 
 	cursorToUse := cursor
 	if cursor.GetCurrentEvent().GetId() == "" {
-		cursorFound, err := it.cursors.GetCursorFor(cursor.GetTopic().GetId(), cursor.GetServiceId())
+		cursorFound, err := it.cursors.GetCursorFor(cursor.GetTopic().GetId(), cursor.GetConsumer())
 		if err != nil && !errorx.HasTrait(err, errorx.NotFound()) {
 			return nil, err
 		}

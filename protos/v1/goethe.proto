@@ -11,7 +11,7 @@ service Goethe {
 
 message Cursor {
     Topic topic = 1;
-    string service_id = 2;
+    string consumer = 2;
     Event current_event = 3;
 }
 

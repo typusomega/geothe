@@ -63,9 +63,9 @@ type ConsumeCommand struct {
 	Positionals struct {
 		LastEvent string `positional-arg-name:"LAST_EVENT"`
 	} `positional-args:"true"`
-	Topic     string `short:"t" long:"topic" description:"Topic to publish to/read from" required:"true"`
-	ServiceID string `short:"s" long:"service-id" description:"The service ID to use" default:"default"`
-	NoWait    bool   `short:"w" long:"no-wait" description:"Streams all events consecutively without waiting for input"`
+	Topic    string `short:"t" long:"topic" description:"Topic to publish to/read from" required:"true"`
+	Consumer string `short:"s" long:"consumer" description:"The consumer to use" default:"default"`
+	NoWait   bool   `short:"w" long:"no-wait" description:"Streams all events consecutively without waiting for input"`
 
 	opts *Opts
 }
@@ -93,8 +93,8 @@ func (it *ConsumeCommand) Execute(args []string) error {
 
 	for {
 		err = client.ConsumeBlocking(ctx, &spec.Cursor{
-			Topic:     &spec.Topic{Id: it.Topic},
-			ServiceId: it.ServiceID,
+			Topic:    &spec.Topic{Id: it.Topic},
+			Consumer: it.Consumer,
 			CurrentEvent: &spec.Event{
 				Id: it.Positionals.LastEvent,
 			},

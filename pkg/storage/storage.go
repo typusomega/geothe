@@ -21,7 +21,7 @@ type EventStorage interface {
 }
 
 type CursorStorage interface {
-	GetCursorFor(serviceID string, topic string) (*spec.Cursor, error)
+	GetCursorFor(consumer string, topic string) (*spec.Cursor, error)
 	SaveCursor(cursor *spec.Cursor) error
 }
 
@@ -98,17 +98,17 @@ func (it *DiskStorage) Read(cursor *spec.Cursor) (*spec.Cursor, error) {
 
 		return &spec.Cursor{
 			Topic:        cursor.GetTopic(),
-			ServiceId:    cursor.GetServiceId(),
+			Consumer:     cursor.GetConsumer(),
 			CurrentEvent: nextEvent,
 		}, nil
 	}
 }
 
-func (it *DiskStorage) GetCursorFor(serviceID string, topic string) (*spec.Cursor, error) {
-	cursor, err := it.db.Get(cursorKey(serviceID, topic), nil)
+func (it *DiskStorage) GetCursorFor(consumer string, topic string) (*spec.Cursor, error) {
+	cursor, err := it.db.Get(cursorKey(consumer, topic), nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			return nil, errors.NotFound.New("could not find cursor for: [%v, %v]", serviceID, topic)
+			return nil, errors.NotFound.New("could not find cursor for: [%v, %v]", consumer, topic)
 		}
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (it *DiskStorage) SaveCursor(cursor *spec.Cursor) error {
 
 	err = it.db.Write(batch, nil)
 	if err != nil {
-		return errorx.RejectedOperation.New("could not write cursor: [%v, %v]", cursor.GetServiceId(), cursor.GetTopic().GetId())
+		return errorx.RejectedOperation.New("could not write cursor: [%v, %v]", cursor.GetConsumer(), cursor.GetTopic().GetId())
 	}
 
 	return nil
@@ -140,12 +140,12 @@ func eventKeyFromCursor(cursor *spec.Cursor) []byte {
 	return []byte(cursor.GetTopic().GetId() + KeySeperator + cursor.GetCurrentEvent().GetId())
 }
 
-func cursorKey(serviceID string, topic string) []byte {
-	return []byte(CursorPrefix + KeySeperator + serviceID + KeySeperator + topic)
+func cursorKey(consumer string, topic string) []byte {
+	return []byte(CursorPrefix + KeySeperator + consumer + KeySeperator + topic)
 }
 
 func cursorKeyFromCursor(cursor *spec.Cursor) []byte {
-	return cursorKey(cursor.GetTopic().GetId(), cursor.GetServiceId())
+	return cursorKey(cursor.GetTopic().GetId(), cursor.GetConsumer())
 }
 
 func TopicFromKey(key []byte) (string, error) {

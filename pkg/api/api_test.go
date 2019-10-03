@@ -197,7 +197,7 @@ func TestAPI_Consume(t *testing.T) {
 			},
 		},
 		{
-			name:  "invalid cursor: no serviceID",
+			name:  "invalid cursor: no consumer",
 			given: func(consumer *mocks.MockConsumer) { consumer.EXPECT().Consume(gomock.Any()).Times(0) },
 			when: args{stream: ConsumeServer(defaultContext, t, &spec.Cursor{
 				Topic:        &topic,
@@ -211,7 +211,7 @@ func TestAPI_Consume(t *testing.T) {
 			name:  "invalid cursor: no topic",
 			given: func(consumer *mocks.MockConsumer) { consumer.EXPECT().Consume(gomock.Any()).Times(0) },
 			when: args{stream: ConsumeServer(defaultContext, t, &spec.Cursor{
-				ServiceId:    serviceID,
+				Consumer:     consumer,
 				CurrentEvent: &defaultEvent,
 			}, status.New(codes.OK, "").Err(), nil)},
 			then: func(err error) {
@@ -380,7 +380,7 @@ func threeCursorConsumeServer(t *testing.T) *mocks.MockGoethe_ConsumeServer {
 var errDefault = fmt.Errorf("fail")
 var topicID = "hello_world"
 var topic = spec.Topic{Id: topicID}
-var serviceID = "default"
+var consumer = "default"
 var defaultEvent = spec.Event{
 	Id:      "123345",
 	Topic:   &topic,
@@ -395,7 +395,7 @@ var validProduceEvent = defaultProduceEvent
 
 var validCursor = spec.Cursor{
 	Topic:        &topic,
-	ServiceId:    serviceID,
+	Consumer:     consumer,
 	CurrentEvent: &defaultEvent,
 }
 

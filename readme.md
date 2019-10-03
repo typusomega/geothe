@@ -23,7 +23,7 @@ Goethe is meant to be the event store in event driven systems. This section shal
 
 Event driven systems use events as their main communication channels. Events are basically facts about things that happend in the system. Naturally, events are immutable, they are facts. This is why having an append-only event log in an event driven system seems to make sense.
 
-Goethe does not put any constraints on the events you want to be flowing through your system, and you will find a lot of good advise like in the [CloudEvents Spec](https://github.com/cloudevents/spec).
+Goethe does not put any constraints on the events you want to be flowing through your system, and you will find a lot of good advice like in the [CloudEvents Spec](https://github.com/cloudevents/spec).
 We consider events as plain old byte arrays, for you to have the complete freedom about what you are doing.
 
 #### Cursors
@@ -33,15 +33,15 @@ Of course there are times when replays are necessary and a consumer wants to rea
 
 This is why we think about cursors owned by a certain service pointing to a certain event in a certain topic.
 
-A consumer is able to tell Goethe the a specific event to start consuming from. This might be because the consumer stored her last known position or to replay events since a certain occurence.
-For consumers' convenience we also enable reading from where a consumer left off by leaving the cursor's `current_event` field blank and Goethe starts from server's the last known cursor position of the service.
+A consumer is able to tell Goethe a specific event to start consuming from. This might be due to the consumer stored her last known position or to replay events since a certain occurence.
+For consumers' convenience we also enable reading from where a consumer left off by leaving the cursor's `current_event` field blank and Goethe starts from server's the last known cursor position of the consumer.
 
 __Future Features__:  
 
 If a consumer wants to read events from a topic at a specific point in time, she can just provide a cursor pointing to that time. Goethe will select the next event which was commited after that time.
 
 In cases where consumers start to become slow, you might start scaling the consumer service horizontally to increase performance and share the load among the instances.
-This is also something which can be addressed by the use of proper cursors. If multiple instances use the same serviceID, the service's cursor is moved for all instances.
+This is also something which can be addressed by the use of proper cursors. If multiple instances use the same `consumer` field in the cursors, the `consumer`'s cursor is moved for all instances.
 
 ### Storage
 
