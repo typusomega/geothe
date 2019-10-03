@@ -8,7 +8,7 @@ import (
 )
 
 type Client interface {
-	Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) error
+	Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) (*spec.Event, error)
 	ConsumeNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error)
 	ConsumeBlocking(ctx context.Context, cursor *spec.Cursor, out chan *spec.Cursor) error
 }
@@ -28,23 +28,23 @@ type client struct {
 	service spec.GoetheClient
 }
 
-func (it *client) Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) error {
+func (it *client) Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) (*spec.Event, error) {
 	publishStream, err := it.service.Produce(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = publishStream.Send(&spec.Event{Topic: topic, Payload: eventContent})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = publishStream.Recv()
+	event, err := publishStream.Recv()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return event, nil
 }
 
 func (it *client) ConsumeNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error) {

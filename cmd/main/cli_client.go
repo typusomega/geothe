@@ -56,7 +56,13 @@ func (it *ProduceCommand) Execute(args []string) error {
 		return err
 	}
 
-	return client.Produce(context.Background(), &spec.Topic{Id: it.Topic}, []byte(it.Positionals.EventContent))
+	event, err := client.Produce(context.Background(), &spec.Topic{Id: it.Topic}, []byte(it.Positionals.EventContent))
+	if err != nil {
+		return err
+	}
+
+	println(fmt.Sprintf("Published: '%v'", event))
+	return nil
 }
 
 type ConsumeCommand struct {

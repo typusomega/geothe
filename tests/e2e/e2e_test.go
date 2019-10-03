@@ -49,7 +49,7 @@ func TestBasic(t *testing.T) {
 		t.Log("starting publishing")
 		for index := 0; index < lastEvent; index++ {
 			publishTimestamps[index] = time.Now().UnixNano()
-			err := publisher.Produce(ctx, topic, []byte(strconv.Itoa(index)))
+			_, err := publisher.Produce(ctx, topic, []byte(strconv.Itoa(index)))
 			assert.Nil(t, err)
 		}
 	}()
@@ -69,6 +69,8 @@ func TestBasic(t *testing.T) {
 				switch status.Code() {
 				case codes.ResourceExhausted:
 					continue
+				case codes.Canceled:
+					return
 				default:
 					panic(err)
 				}
