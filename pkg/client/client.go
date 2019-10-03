@@ -8,9 +8,9 @@ import (
 )
 
 type Client interface {
-	Publish(ctx context.Context, topic *spec.Topic, eventContent []byte) error
-	ReadNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error)
-	ReadBlocking(ctx context.Context, cursor *spec.Cursor, out chan *spec.Cursor) error
+	Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) error
+	ConsumeNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error)
+	ConsumeBlocking(ctx context.Context, cursor *spec.Cursor, out chan *spec.Cursor) error
 }
 
 func New(ctx context.Context, serverAddress string) (Client, error) {
@@ -28,13 +28,13 @@ type client struct {
 	service spec.GoetheClient
 }
 
-func (it *client) Publish(ctx context.Context, topic *spec.Topic, eventContent []byte) error {
-	publishStream, err := it.service.Publish(ctx)
+func (it *client) Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) error {
+	publishStream, err := it.service.Produce(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = publishStream.Send(&spec.PublishRequest{Topic: topic, Event: &spec.Event{Topic: topic, Payload: eventContent}})
+	err = publishStream.Send(&spec.Event{Topic: topic, Payload: eventContent})
 	if err != nil {
 		return err
 	}
@@ -47,8 +47,8 @@ func (it *client) Publish(ctx context.Context, topic *spec.Topic, eventContent [
 	return nil
 }
 
-func (it *client) ReadNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error) {
-	readStream, err := it.service.Stream(ctx)
+func (it *client) ConsumeNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error) {
+	readStream, err := it.service.Consume(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func (it *client) ReadNext(ctx context.Context, cursor *spec.Cursor) (*spec.Curs
 	return newCursor, nil
 }
 
-func (it *client) ReadBlocking(ctx context.Context, startCursor *spec.Cursor, out chan *spec.Cursor) error {
-	readStream, err := it.service.Stream(ctx)
+func (it *client) ConsumeBlocking(ctx context.Context, startCursor *spec.Cursor, out chan *spec.Cursor) error {
+	readStream, err := it.service.Consume(ctx)
 	if err != nil {
 		return err
 	}

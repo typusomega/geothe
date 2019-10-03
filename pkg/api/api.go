@@ -11,37 +11,41 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type API interface {
+	spec.GoetheServer
+}
+
 // New creates a new API instance
-func New(producer Producer, consumer Consumer) *API {
-	return &API{producer: producer, consumer: consumer}
+func New(producer Producer, consumer Consumer) API {
+	return &api{producer: producer, consumer: consumer}
 }
 
 // Publish is a bidi-stream publish command
-func (it *API) Publish(stream spec.Goethe_PublishServer) error {
+func (it *api) Produce(stream spec.Goethe_ProduceServer) error {
 	for {
 		select {
 		case <-stream.Context().Done():
 			return nil
 		default:
-			request, err := stream.Recv()
+			event, err := stream.Recv()
 			exit, err := handleStreamError(err)
 			if exit {
 				return err
 			}
 
-			logrus.Debugf("received publish request for topic: '%v' for event: '%v'", request.GetTopic(), request.GetEvent())
+			logrus.Debugf("received publish request for event: '%v'", event)
 
-			if err = verifyPublishRequest(request); err != nil {
+			if err = verifyProduceEvent(event); err != nil {
 				return err
 			}
 
-			event, err := it.producer.Publish(request.GetEvent())
+			producedEvent, err := it.producer.Produce(event)
 			if err != nil {
-				logrus.WithError(err).Errorf("could not store event: '%v' in topic: '%v'", request.GetEvent(), request.GetTopic())
-				return status.Newf(codes.Internal, "could not store event: '%v' in topic: '%v'", request.GetEvent(), request.GetTopic()).Err()
+				logrus.WithError(err).Errorf("could not store event: '%v' in topic: '%v'", event, event.GetTopic())
+				return status.Newf(codes.Internal, "could not store event: '%v' in topic: '%v'", event, event.GetTopic()).Err()
 			}
 
-			err = stream.Send(&spec.PublishResponse{Topic: request.GetTopic(), Event: event})
+			err = stream.Send(producedEvent)
 			if err != nil {
 				logrus.WithError(err).Error("could not send response to client")
 				return err
@@ -53,7 +57,7 @@ func (it *API) Publish(stream spec.Goethe_PublishServer) error {
 }
 
 // Stream is a bidi-stream read command
-func (it *API) Stream(stream spec.Goethe_StreamServer) error {
+func (it *api) Consume(stream spec.Goethe_ConsumeServer) error {
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -71,7 +75,7 @@ func (it *API) Stream(stream spec.Goethe_StreamServer) error {
 			return err
 		}
 
-		newCursor, err := it.consumer.Stream(cursor)
+		newCursor, err := it.consumer.Consume(cursor)
 		if err = handleReadError(newCursor, err); err != nil {
 			return err
 		}
@@ -84,12 +88,12 @@ func (it *API) Stream(stream spec.Goethe_StreamServer) error {
 	}
 }
 
-func verifyPublishRequest(request *spec.PublishRequest) error {
-	if request.GetTopic().GetId() == "" {
+func verifyProduceEvent(event *spec.Event) error {
+	if event.GetTopic().GetId() == "" {
 		return status.New(codes.InvalidArgument, "topic id must not be empty").Err()
 	}
 
-	if len(request.GetEvent().GetPayload()) == 0 {
+	if len(event.GetPayload()) == 0 {
 		return status.New(codes.InvalidArgument, "event content must not be empty").Err()
 	}
 
@@ -142,8 +146,8 @@ func handleStreamError(err error) (bool, error) {
 	}
 }
 
-// API is the implementation of the grpc API
-type API struct {
+// api is the implementation of the grpc api
+type api struct {
 	producer Producer
 	consumer Consumer
 }

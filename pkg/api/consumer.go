@@ -7,7 +7,7 @@ import (
 )
 
 type Consumer interface {
-	Stream(cursor *spec.Cursor) (*spec.Cursor, error)
+	Consume(cursor *spec.Cursor) (*spec.Cursor, error)
 }
 
 func NewConsumer(cursors storage.CursorStorage, events storage.EventStorage) Consumer {
@@ -17,7 +17,7 @@ func NewConsumer(cursors storage.CursorStorage, events storage.EventStorage) Con
 	}
 }
 
-func (it *consumer) Stream(cursor *spec.Cursor) (*spec.Cursor, error) {
+func (it *consumer) Consume(cursor *spec.Cursor) (*spec.Cursor, error) {
 	if cursor.GetTopic() == nil || cursor.GetTopic().GetId() == "" {
 		return nil, errorx.IllegalArgument.New("cursor's topic id must be set")
 	}

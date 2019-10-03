@@ -34,17 +34,17 @@ func (m *MockConsumer) EXPECT() *MockConsumerMockRecorder {
 	return m.recorder
 }
 
-// Stream mocks base method
-func (m *MockConsumer) Stream(arg0 *spec.Cursor) (*spec.Cursor, error) {
+// Consume mocks base method
+func (m *MockConsumer) Consume(arg0 *spec.Cursor) (*spec.Cursor, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stream", arg0)
+	ret := m.ctrl.Call(m, "Consume", arg0)
 	ret0, _ := ret[0].(*spec.Cursor)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Stream indicates an expected call of Stream
-func (mr *MockConsumerMockRecorder) Stream(arg0 interface{}) *gomock.Call {
+// Consume indicates an expected call of Consume
+func (mr *MockConsumerMockRecorder) Consume(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stream", reflect.TypeOf((*MockConsumer)(nil).Stream), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Consume", reflect.TypeOf((*MockConsumer)(nil).Consume), arg0)
 }

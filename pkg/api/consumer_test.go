@@ -133,7 +133,7 @@ func Test_consumer_Stream(t *testing.T) {
 			}
 
 			it := api.NewConsumer(cursorStorageMock, eventStorageMock)
-			got, err := it.Stream(tt.when.cursor)
+			got, err := it.Consume(tt.when.cursor)
 			tt.then(got, err)
 		})
 	}

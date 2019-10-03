@@ -16,11 +16,11 @@ import (
 
 func main() {
 	parser := flags.NewParser(&opts, flags.Default)
-	_, err := parser.AddCommand("publish", "Publish an event", "", &PublishCommand{opts: &opts})
+	_, err := parser.AddCommand("produce", "Produce an event", "", &ProduceCommand{opts: &opts})
 	if err != nil {
 		panic(err)
 	}
-	_, err = parser.AddCommand("read", "Read an event", "", &ReadCommand{opts: &opts})
+	_, err = parser.AddCommand("consume", "Consume an event", "", &ConsumeCommand{opts: &opts})
 	if err != nil {
 		panic(err)
 	}
@@ -36,41 +36,41 @@ var opts Opts
 
 type Opts struct {
 	ServerAddress string `short:"a" long:"server-address" description:"Address of the Goethe grpc server (e.g. 'localhost:1337')" default:"localhost:1337"`
-	Topic         string `short:"t" long:"topic" description:"Topic to publish to/read from" required:"true"`
 }
 
 func (it *Opts) GetClient() (client.Client, error) {
 	return client.New(context.TODO(), it.ServerAddress)
 }
 
-type PublishCommand struct {
+type ProduceCommand struct {
 	Positionals struct {
 		EventContent string `positional-arg-name:"EVENT_CONTENT"`
 	} `positional-args:"true" required:"true"`
-	opts *Opts
+	Topic string `short:"t" long:"topic" description:"Topic to publish to/read from" required:"true"`
+	opts  *Opts
 }
 
-func (it *PublishCommand) Execute(args []string) error {
+func (it *ProduceCommand) Execute(args []string) error {
 	client, err := it.opts.GetClient()
 	if err != nil {
 		return err
 	}
 
-	return client.Publish(context.Background(), &spec.Topic{Id: it.opts.Topic}, []byte(it.Positionals.EventContent))
+	return client.Produce(context.Background(), &spec.Topic{Id: it.Topic}, []byte(it.Positionals.EventContent))
 }
 
-type ReadCommand struct {
+type ConsumeCommand struct {
 	Positionals struct {
 		LastEvent string `positional-arg-name:"LAST_EVENT"`
 	} `positional-args:"true"`
-
+	Topic     string `short:"t" long:"topic" description:"Topic to publish to/read from" required:"true"`
 	ServiceID string `short:"s" long:"service-id" description:"The service ID to use" default:"default"`
 	NoWait    bool   `short:"w" long:"no-wait" description:"Streams all events consecutively without waiting for input"`
 
 	opts *Opts
 }
 
-func (it *ReadCommand) Execute(args []string) error {
+func (it *ConsumeCommand) Execute(args []string) error {
 	client, err := it.opts.GetClient()
 	if err != nil {
 		return err
@@ -92,8 +92,8 @@ func (it *ReadCommand) Execute(args []string) error {
 	}()
 
 	for {
-		err = client.ReadBlocking(ctx, &spec.Cursor{
-			Topic:     &spec.Topic{Id: it.opts.Topic},
+		err = client.ConsumeBlocking(ctx, &spec.Cursor{
+			Topic:     &spec.Topic{Id: it.Topic},
 			ServiceId: it.ServiceID,
 			CurrentEvent: &spec.Event{
 				Id: it.Positionals.LastEvent,

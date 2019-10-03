@@ -1,7 +1,7 @@
 package api_test
 
-//go:generate mockgen -package mocks -destination=./../mocks/mock_publish_server.go github.com/typusomega/goethe/pkg/spec Goethe_PublishServer
-//go:generate mockgen -package mocks -destination=./../mocks/mock_stream_server.go github.com/typusomega/goethe/pkg/spec Goethe_StreamServer
+//go:generate mockgen -package mocks -destination=./../mocks/mock_produce_server.go github.com/typusomega/goethe/pkg/spec Goethe_ProduceServer
+//go:generate mockgen -package mocks -destination=./../mocks/mock_consume_server.go github.com/typusomega/goethe/pkg/spec Goethe_ConsumeServer
 //go:generate mockgen -package mocks -destination=./../mocks/mock_consumer.go github.com/typusomega/goethe/pkg/api Consumer
 //go:generate mockgen -package mocks -destination=./../mocks/mock_producer.go github.com/typusomega/goethe/pkg/api Producer
 
@@ -21,9 +21,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestAPI_Publish(t *testing.T) {
+func TestAPI_Produce(t *testing.T) {
 	type args struct {
-		stream spec.Goethe_PublishServer
+		stream spec.Goethe_ProduceServer
 	}
 	tests := []struct {
 		name  string
@@ -32,92 +32,87 @@ func TestAPI_Publish(t *testing.T) {
 		then  func(err error)
 	}{
 		{
-			name: "valid request, stream receive ok, storage success, stream send ok",
-			given: func(storage *mocks.MockProducer) {
-				storage.EXPECT().Publish(gomock.Eq(&defaultPublishEvent)).Times(3)
+			name: "valid event, stream receive ok, producer success, stream send ok",
+			given: func(producer *mocks.MockProducer) {
+				producer.EXPECT().Produce(gomock.Eq(&defaultProduceEvent)).Times(3)
 			},
-			when: args{stream: threeRequestsPublishServer(t)},
+			when: args{stream: threeEventsProduceServer(t)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "client cancelled context",
-			given: func(storage *mocks.MockProducer) {},
-			when:  args{stream: contextCancelledPublishServer(t)},
+			given: func(producer *mocks.MockProducer) {},
+			when:  args{stream: contextCancelledProduceServer(t)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive eof",
-			given: func(storage *mocks.MockProducer) {},
-			when:  args{stream: publishServer(defaultContext, t, &validPublishRequest, io.EOF, nil)},
+			given: func(producer *mocks.MockProducer) {},
+			when:  args{stream: ProduceServer(defaultContext, t, &validProduceEvent, io.EOF, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive deadline exceeded",
-			given: func(storage *mocks.MockProducer) {},
-			when:  args{stream: statusCodePublishServer(t, codes.DeadlineExceeded)},
+			given: func(producer *mocks.MockProducer) {},
+			when:  args{stream: statusCodeProduceServer(t, codes.DeadlineExceeded)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive canceled",
-			given: func(storage *mocks.MockProducer) {},
-			when:  args{stream: statusCodePublishServer(t, codes.Canceled)},
+			given: func(producer *mocks.MockProducer) {},
+			when:  args{stream: statusCodeProduceServer(t, codes.Canceled)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive unknown error",
-			given: func(storage *mocks.MockProducer) {},
-			when:  args{stream: publishServer(defaultContext, t, nil, errDefault, nil)},
+			given: func(producer *mocks.MockProducer) {},
+			when:  args{stream: ProduceServer(defaultContext, t, nil, errDefault, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
 		},
 		{
-			name:  "invalid request: no topic",
-			given: func(storage *mocks.MockProducer) { storage.EXPECT().Publish(gomock.Any()).Times(0) },
-			when: args{stream: publishServer(defaultContext, t, &spec.PublishRequest{
-				Event: &spec.Event{Topic: &topic, Payload: []byte("123")},
-			}, status.New(codes.OK, "").Err(), nil)},
+			name:  "invalid event: no topic",
+			given: func(producer *mocks.MockProducer) { producer.EXPECT().Produce(gomock.Any()).Times(0) },
+			when:  args{stream: ProduceServer(defaultContext, t, &spec.Event{Payload: []byte("123")}, status.New(codes.OK, "").Err(), nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.InvalidArgument, getStatusCode(err))
 			},
 		},
 		{
-			name:  "invalid request: no event content",
-			given: func(storage *mocks.MockProducer) { storage.EXPECT().Publish(gomock.Any()).Times(0) },
-			when: args{stream: publishServer(defaultContext, t, &spec.PublishRequest{
-				Topic: &topic,
-				Event: &spec.Event{Topic: &topic},
-			}, status.New(codes.OK, "").Err(), nil)},
+			name:  "invalid event: no event content",
+			given: func(producer *mocks.MockProducer) { producer.EXPECT().Produce(gomock.Any()).Times(0) },
+			when:  args{stream: ProduceServer(defaultContext, t, &spec.Event{Topic: &topic}, status.New(codes.OK, "").Err(), nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.InvalidArgument, getStatusCode(err))
 			},
 		},
 		{
-			name: "storage failure",
-			given: func(storage *mocks.MockProducer) {
-				storage.EXPECT().Publish(gomock.Eq(&defaultPublishEvent)).Return(nil, errDefault).Times(1)
+			name: "producer failure",
+			given: func(producer *mocks.MockProducer) {
+				producer.EXPECT().Produce(gomock.Eq(&defaultProduceEvent)).Return(nil, errDefault).Times(1)
 			},
-			when: args{stream: oncePublishServer(defaultContext, t, status.New(codes.OK, "").Err())},
+			when: args{stream: onceProduceServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
 		},
 		{
 			name: "stream send failure",
-			given: func(storage *mocks.MockProducer) {
-				storage.EXPECT().Publish(gomock.Eq(&defaultPublishEvent)).Return(&defaultEvent, nil).Times(1)
+			given: func(producer *mocks.MockProducer) {
+				producer.EXPECT().Produce(gomock.Eq(&defaultProduceEvent)).Return(&defaultEvent, nil).Times(1)
 			},
-			when: args{stream: oncePublishServer(defaultContext, t, errDefault)},
+			when: args{stream: onceProduceServer(defaultContext, t, errDefault)},
 			then: func(err error) {
 				assert.Equal(t, errDefault, err)
 			},
@@ -135,15 +130,15 @@ func TestAPI_Publish(t *testing.T) {
 			}
 
 			it := api.New(producerMock, consumerMock)
-			err := it.Publish(tt.when.stream)
+			err := it.Produce(tt.when.stream)
 			tt.then(err)
 		})
 	}
 }
 
-func TestAPI_Stream(t *testing.T) {
+func TestAPI_Consume(t *testing.T) {
 	type args struct {
-		stream spec.Goethe_StreamServer
+		stream spec.Goethe_ConsumeServer
 	}
 	tests := []struct {
 		name  string
@@ -152,59 +147,59 @@ func TestAPI_Stream(t *testing.T) {
 		then  func(err error)
 	}{
 		{
-			name: "valid cursor, stream receive ok, storage success, stream send ok",
-			given: func(storage *mocks.MockConsumer) {
-				storage.EXPECT().Stream(gomock.Eq(&validCursor)).Return(&validCursor, nil).Times(3)
+			name: "valid cursor, stream receive ok, consumer success, stream send ok",
+			given: func(consumer *mocks.MockConsumer) {
+				consumer.EXPECT().Consume(gomock.Eq(&validCursor)).Return(&validCursor, nil).Times(3)
 			},
-			when: args{stream: threeCursorStreamServer(t)},
+			when: args{stream: threeCursorConsumeServer(t)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "client cancelled context",
-			given: func(storage *mocks.MockConsumer) {},
-			when:  args{stream: contextCancelledStreamServer(t)},
+			given: func(consumer *mocks.MockConsumer) {},
+			when:  args{stream: contextCancelledConsumeServer(t)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive eof",
-			given: func(storage *mocks.MockConsumer) {},
-			when:  args{stream: contextCancelledStreamServer(t)},
+			given: func(consumer *mocks.MockConsumer) {},
+			when:  args{stream: contextCancelledConsumeServer(t)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive deadline exceeded",
-			given: func(storage *mocks.MockConsumer) {},
-			when:  args{stream: statusCodeStreamServer(t, codes.DeadlineExceeded)},
+			given: func(consumer *mocks.MockConsumer) {},
+			when:  args{stream: statusCodeConsumeServer(t, codes.DeadlineExceeded)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive canceled",
-			given: func(storage *mocks.MockConsumer) {},
-			when:  args{stream: statusCodeStreamServer(t, codes.Canceled)},
+			given: func(consumer *mocks.MockConsumer) {},
+			when:  args{stream: statusCodeConsumeServer(t, codes.Canceled)},
 			then: func(err error) {
 				assert.Equal(t, codes.OK, getStatusCode(err))
 			},
 		},
 		{
 			name:  "stream receive unknown error",
-			given: func(storage *mocks.MockConsumer) {},
-			when:  args{stream: streamServer(defaultContext, t, nil, errDefault, nil)},
+			given: func(consumer *mocks.MockConsumer) {},
+			when:  args{stream: ConsumeServer(defaultContext, t, nil, errDefault, nil)},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
 		},
 		{
 			name:  "invalid cursor: no serviceID",
-			given: func(storage *mocks.MockConsumer) { storage.EXPECT().Stream(gomock.Any()).Times(0) },
-			when: args{stream: streamServer(defaultContext, t, &spec.Cursor{
+			given: func(consumer *mocks.MockConsumer) { consumer.EXPECT().Consume(gomock.Any()).Times(0) },
+			when: args{stream: ConsumeServer(defaultContext, t, &spec.Cursor{
 				Topic:        &topic,
 				CurrentEvent: &defaultEvent,
 			}, status.New(codes.OK, "").Err(), nil)},
@@ -214,8 +209,8 @@ func TestAPI_Stream(t *testing.T) {
 		},
 		{
 			name:  "invalid cursor: no topic",
-			given: func(storage *mocks.MockConsumer) { storage.EXPECT().Stream(gomock.Any()).Times(0) },
-			when: args{stream: streamServer(defaultContext, t, &spec.Cursor{
+			given: func(consumer *mocks.MockConsumer) { consumer.EXPECT().Consume(gomock.Any()).Times(0) },
+			when: args{stream: ConsumeServer(defaultContext, t, &spec.Cursor{
 				ServiceId:    serviceID,
 				CurrentEvent: &defaultEvent,
 			}, status.New(codes.OK, "").Err(), nil)},
@@ -224,41 +219,41 @@ func TestAPI_Stream(t *testing.T) {
 			},
 		},
 		{
-			name: "storage unkown failure",
-			given: func(storage *mocks.MockConsumer) {
-				storage.EXPECT().Stream(gomock.Eq(&validCursor)).Return(nil, errDefault).Times(1)
+			name: "consumer unkown failure",
+			given: func(consumer *mocks.MockConsumer) {
+				consumer.EXPECT().Consume(gomock.Eq(&validCursor)).Return(nil, errDefault).Times(1)
 			},
-			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
+			when: args{stream: onceConsumeServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.Internal, getStatusCode(err))
 			},
 		},
 		{
-			name: "storage failure: resource exhausted",
-			given: func(storage *mocks.MockConsumer) {
-				storage.EXPECT().Stream(gomock.Eq(&validCursor)).Return(nil, errors.ResourceExhaustedError.New("fail")).Times(1)
+			name: "consumer failure: resource exhausted",
+			given: func(consumer *mocks.MockConsumer) {
+				consumer.EXPECT().Consume(gomock.Eq(&validCursor)).Return(nil, errors.ResourceExhaustedError.New("fail")).Times(1)
 			},
-			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
+			when: args{stream: onceConsumeServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.ResourceExhausted, getStatusCode(err))
 			},
 		},
 		{
-			name: "storage failure: not found",
-			given: func(storage *mocks.MockConsumer) {
-				storage.EXPECT().Stream(gomock.Eq(&validCursor)).Return(nil, errors.NotFound.New("fail")).Times(1)
+			name: "consumer failure: not found",
+			given: func(consumer *mocks.MockConsumer) {
+				consumer.EXPECT().Consume(gomock.Eq(&validCursor)).Return(nil, errors.NotFound.New("fail")).Times(1)
 			},
-			when: args{stream: onceStreamServer(defaultContext, t, status.New(codes.OK, "").Err())},
+			when: args{stream: onceConsumeServer(defaultContext, t, status.New(codes.OK, "").Err())},
 			then: func(err error) {
 				assert.Equal(t, codes.NotFound, getStatusCode(err))
 			},
 		},
 		{
 			name: "stream send failure",
-			given: func(storage *mocks.MockConsumer) {
-				storage.EXPECT().Stream(gomock.Eq(&validCursor)).Return(&validCursor, nil).Times(1)
+			given: func(consumer *mocks.MockConsumer) {
+				consumer.EXPECT().Consume(gomock.Eq(&validCursor)).Return(&validCursor, nil).Times(1)
 			},
-			when: args{stream: onceStreamServer(defaultContext, t, errDefault)},
+			when: args{stream: onceConsumeServer(defaultContext, t, errDefault)},
 			then: func(err error) {
 				assert.Equal(t, errDefault, err)
 			},
@@ -276,82 +271,82 @@ func TestAPI_Stream(t *testing.T) {
 			}
 
 			it := api.New(producerMock, consumerMock)
-			err := it.Stream(tt.when.stream)
+			err := it.Consume(tt.when.stream)
 			tt.then(err)
 		})
 	}
 }
 
-func contextCancelledPublishServer(t *testing.T) spec.Goethe_PublishServer {
+func contextCancelledProduceServer(t *testing.T) spec.Goethe_ProduceServer {
 	ctx, cncl := context.WithCancel(context.Background())
 	cncl()
-	return publishServer(ctx, t, &validPublishRequest, nil, nil)
+	return ProduceServer(ctx, t, &validProduceEvent, nil, nil)
 }
 
-func contextCancelledStreamServer(t *testing.T) spec.Goethe_StreamServer {
+func contextCancelledConsumeServer(t *testing.T) spec.Goethe_ConsumeServer {
 	ctx, cncl := context.WithCancel(context.Background())
 	cncl()
-	return streamServer(ctx, t, &validCursor, nil, nil)
+	return ConsumeServer(ctx, t, &validCursor, nil, nil)
 }
 
-func statusCodePublishServer(t *testing.T, code codes.Code) *mocks.MockGoethe_PublishServer {
-	return publishServer(defaultContext, t, &validPublishRequest, status.New(code, "fail").Err(), nil)
+func statusCodeProduceServer(t *testing.T, code codes.Code) *mocks.MockGoethe_ProduceServer {
+	return ProduceServer(defaultContext, t, &validProduceEvent, status.New(code, "fail").Err(), nil)
 }
 
-func statusCodeStreamServer(t *testing.T, code codes.Code) *mocks.MockGoethe_StreamServer {
-	return streamServer(defaultContext, t, &validCursor, status.New(code, "fail").Err(), nil)
+func statusCodeConsumeServer(t *testing.T, code codes.Code) *mocks.MockGoethe_ConsumeServer {
+	return ConsumeServer(defaultContext, t, &validCursor, status.New(code, "fail").Err(), nil)
 }
 
-func publishServer(ctx context.Context, t *testing.T, request *spec.PublishRequest, recvErr error, sendErr error) *mocks.MockGoethe_PublishServer {
-	mock := mocks.NewMockGoethe_PublishServer(gomock.NewController(t))
+func ProduceServer(ctx context.Context, t *testing.T, request *spec.Event, recvErr error, sendErr error) *mocks.MockGoethe_ProduceServer {
+	mock := mocks.NewMockGoethe_ProduceServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	mock.EXPECT().Recv().Return(request, recvErr).AnyTimes()
 	mock.EXPECT().Send(gomock.Any()).Return(sendErr).AnyTimes()
 	return mock
 }
 
-func streamServer(ctx context.Context, t *testing.T, cursor *spec.Cursor, recvErr error, sendErr error) *mocks.MockGoethe_StreamServer {
-	mock := mocks.NewMockGoethe_StreamServer(gomock.NewController(t))
+func ConsumeServer(ctx context.Context, t *testing.T, cursor *spec.Cursor, recvErr error, sendErr error) *mocks.MockGoethe_ConsumeServer {
+	mock := mocks.NewMockGoethe_ConsumeServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	mock.EXPECT().Recv().Return(cursor, recvErr).AnyTimes()
 	mock.EXPECT().Send(gomock.Any()).Return(sendErr).AnyTimes()
 	return mock
 }
 
-func oncePublishServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_PublishServer {
-	mock := mocks.NewMockGoethe_PublishServer(gomock.NewController(t))
+func onceProduceServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_ProduceServer {
+	mock := mocks.NewMockGoethe_ProduceServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	done := false
-	mock.EXPECT().Recv().DoAndReturn(func() (*spec.PublishRequest, error) {
+	mock.EXPECT().Recv().DoAndReturn(func() (*spec.Event, error) {
 		if done {
 			return nil, status.New(codes.Canceled, "done").Err()
 		}
 
 		done = true
-		return &validPublishRequest, nil
+		return &validProduceEvent, nil
 	}).AnyTimes()
 	mock.EXPECT().Send(gomock.Any()).Return(err).AnyTimes()
 	return mock
 }
 
-func threeRequestsPublishServer(t *testing.T) *mocks.MockGoethe_PublishServer {
-	mock := mocks.NewMockGoethe_PublishServer(gomock.NewController(t))
+func threeEventsProduceServer(t *testing.T) *mocks.MockGoethe_ProduceServer {
+	mock := mocks.NewMockGoethe_ProduceServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(defaultContext).AnyTimes()
 	cnt := 1
-	mock.EXPECT().Recv().DoAndReturn(func() (*spec.PublishRequest, error) {
+	mock.EXPECT().Recv().DoAndReturn(func() (*spec.Event, error) {
 		if cnt > 3 {
 			return nil, status.New(codes.Canceled, "done").Err()
 		}
 
 		cnt++
-		return &validPublishRequest, nil
+		return &validProduceEvent, nil
 	}).AnyTimes()
 	mock.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 	return mock
 }
 
-func onceStreamServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_StreamServer {
-	mock := mocks.NewMockGoethe_StreamServer(gomock.NewController(t))
+func onceConsumeServer(ctx context.Context, t *testing.T, err error) *mocks.MockGoethe_ConsumeServer {
+	mock := mocks.NewMockGoethe_ConsumeServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(ctx).AnyTimes()
 	done := false
 	mock.EXPECT().Recv().DoAndReturn(func() (*spec.Cursor, error) {
@@ -366,8 +361,8 @@ func onceStreamServer(ctx context.Context, t *testing.T, err error) *mocks.MockG
 	return mock
 }
 
-func threeCursorStreamServer(t *testing.T) *mocks.MockGoethe_StreamServer {
-	mock := mocks.NewMockGoethe_StreamServer(gomock.NewController(t))
+func threeCursorConsumeServer(t *testing.T) *mocks.MockGoethe_ConsumeServer {
+	mock := mocks.NewMockGoethe_ConsumeServer(gomock.NewController(t))
 	mock.EXPECT().Context().Return(defaultContext).AnyTimes()
 	cnt := 1
 	mock.EXPECT().Recv().DoAndReturn(func() (*spec.Cursor, error) {
@@ -391,15 +386,12 @@ var defaultEvent = spec.Event{
 	Topic:   &topic,
 	Payload: []byte("test message"),
 }
-var defaultPublishEvent = spec.Event{
+var defaultProduceEvent = spec.Event{
 	Topic:   &topic,
 	Payload: []byte("test message"),
 }
 
-var validPublishRequest = spec.PublishRequest{
-	Topic: &topic,
-	Event: &defaultPublishEvent,
-}
+var validProduceEvent = defaultProduceEvent
 
 var validCursor = spec.Cursor{
 	Topic:        &topic,

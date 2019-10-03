@@ -49,7 +49,7 @@ func TestBasic(t *testing.T) {
 		t.Log("starting publishing")
 		for index := 0; index < lastEvent; index++ {
 			publishTimestamps[index] = time.Now().UnixNano()
-			err := publisher.Publish(ctx, topic, []byte(strconv.Itoa(index)))
+			err := publisher.Produce(ctx, topic, []byte(strconv.Itoa(index)))
 			assert.Nil(t, err)
 		}
 	}()
@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 	t.Log("starting consumption")
 	go func() {
 		for {
-			err = consumer.ReadBlocking(ctx, &spec.Cursor{Topic: topic, ServiceId: "default"}, cursors)
+			err = consumer.ConsumeBlocking(ctx, &spec.Cursor{Topic: topic, ServiceId: "default"}, cursors)
 			if err != nil {
 				if err == io.EOF {
 					continue

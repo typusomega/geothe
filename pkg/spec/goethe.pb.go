@@ -25,100 +25,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type PublishRequest struct {
-	Topic                *Topic   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
-	Event                *Event   `protobuf:"bytes,2,opt,name=event,proto3" json:"event,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PublishRequest) Reset()         { *m = PublishRequest{} }
-func (m *PublishRequest) String() string { return proto.CompactTextString(m) }
-func (*PublishRequest) ProtoMessage()    {}
-func (*PublishRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1e567c1cdd9caf08, []int{0}
-}
-
-func (m *PublishRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PublishRequest.Unmarshal(m, b)
-}
-func (m *PublishRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PublishRequest.Marshal(b, m, deterministic)
-}
-func (m *PublishRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PublishRequest.Merge(m, src)
-}
-func (m *PublishRequest) XXX_Size() int {
-	return xxx_messageInfo_PublishRequest.Size(m)
-}
-func (m *PublishRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_PublishRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PublishRequest proto.InternalMessageInfo
-
-func (m *PublishRequest) GetTopic() *Topic {
-	if m != nil {
-		return m.Topic
-	}
-	return nil
-}
-
-func (m *PublishRequest) GetEvent() *Event {
-	if m != nil {
-		return m.Event
-	}
-	return nil
-}
-
-type PublishResponse struct {
-	Topic                *Topic   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
-	Event                *Event   `protobuf:"bytes,2,opt,name=event,proto3" json:"event,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *PublishResponse) Reset()         { *m = PublishResponse{} }
-func (m *PublishResponse) String() string { return proto.CompactTextString(m) }
-func (*PublishResponse) ProtoMessage()    {}
-func (*PublishResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1e567c1cdd9caf08, []int{1}
-}
-
-func (m *PublishResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PublishResponse.Unmarshal(m, b)
-}
-func (m *PublishResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PublishResponse.Marshal(b, m, deterministic)
-}
-func (m *PublishResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PublishResponse.Merge(m, src)
-}
-func (m *PublishResponse) XXX_Size() int {
-	return xxx_messageInfo_PublishResponse.Size(m)
-}
-func (m *PublishResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_PublishResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PublishResponse proto.InternalMessageInfo
-
-func (m *PublishResponse) GetTopic() *Topic {
-	if m != nil {
-		return m.Topic
-	}
-	return nil
-}
-
-func (m *PublishResponse) GetEvent() *Event {
-	if m != nil {
-		return m.Event
-	}
-	return nil
-}
-
 type Cursor struct {
 	Topic                *Topic   `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
 	ServiceId            string   `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
@@ -132,7 +38,7 @@ func (m *Cursor) Reset()         { *m = Cursor{} }
 func (m *Cursor) String() string { return proto.CompactTextString(m) }
 func (*Cursor) ProtoMessage()    {}
 func (*Cursor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1e567c1cdd9caf08, []int{2}
+	return fileDescriptor_1e567c1cdd9caf08, []int{0}
 }
 
 func (m *Cursor) XXX_Unmarshal(b []byte) error {
@@ -187,7 +93,7 @@ func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1e567c1cdd9caf08, []int{3}
+	return fileDescriptor_1e567c1cdd9caf08, []int{1}
 }
 
 func (m *Event) XXX_Unmarshal(b []byte) error {
@@ -240,7 +146,7 @@ func (m *Topic) Reset()         { *m = Topic{} }
 func (m *Topic) String() string { return proto.CompactTextString(m) }
 func (*Topic) ProtoMessage()    {}
 func (*Topic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1e567c1cdd9caf08, []int{4}
+	return fileDescriptor_1e567c1cdd9caf08, []int{2}
 }
 
 func (m *Topic) XXX_Unmarshal(b []byte) error {
@@ -269,8 +175,6 @@ func (m *Topic) GetId() string {
 }
 
 func init() {
-	proto.RegisterType((*PublishRequest)(nil), "io.typusomega.goethe.PublishRequest")
-	proto.RegisterType((*PublishResponse)(nil), "io.typusomega.goethe.PublishResponse")
 	proto.RegisterType((*Cursor)(nil), "io.typusomega.goethe.Cursor")
 	proto.RegisterType((*Event)(nil), "io.typusomega.goethe.Event")
 	proto.RegisterType((*Topic)(nil), "io.typusomega.goethe.Topic")
@@ -279,28 +183,26 @@ func init() {
 func init() { proto.RegisterFile("protos/v1/goethe.proto", fileDescriptor_1e567c1cdd9caf08) }
 
 var fileDescriptor_1e567c1cdd9caf08 = []byte{
-	// 329 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x93, 0xdf, 0x4a, 0xf3, 0x40,
-	0x10, 0xc5, 0xbf, 0xe4, 0xa3, 0x29, 0x1d, 0x6b, 0x85, 0x45, 0xb4, 0x54, 0x05, 0x09, 0x16, 0x7b,
-	0x95, 0xd8, 0xfa, 0x02, 0xa2, 0x88, 0xe8, 0x95, 0x44, 0xaf, 0x44, 0x28, 0x69, 0x76, 0x48, 0x17,
-	0xdb, 0xee, 0xba, 0x7f, 0x22, 0x7d, 0x17, 0x9f, 0xc2, 0x27, 0x94, 0xee, 0x46, 0x8b, 0x12, 0x5a,
-	0xf1, 0xc2, 0xbb, 0xec, 0xcc, 0xef, 0xcc, 0x39, 0x30, 0x13, 0xd8, 0x11, 0x92, 0x6b, 0xae, 0xe2,
-	0xa2, 0x1f, 0xe7, 0x1c, 0xf5, 0x18, 0x23, 0x5b, 0x20, 0xdb, 0x8c, 0x47, 0x7a, 0x2e, 0x8c, 0xe2,
-	0x53, 0xcc, 0xd3, 0xc8, 0xf5, 0xc2, 0x02, 0x5a, 0xb7, 0x66, 0x34, 0x61, 0x6a, 0x9c, 0xe0, 0xb3,
-	0x41, 0xa5, 0x49, 0x1f, 0x6a, 0x9a, 0x0b, 0x96, 0xb5, 0xbd, 0x43, 0xaf, 0xb7, 0x31, 0xd8, 0x8b,
-	0xaa, 0x74, 0xd1, 0xfd, 0x02, 0x49, 0x1c, 0xb9, 0x90, 0x60, 0x81, 0x33, 0xdd, 0xf6, 0x57, 0x49,
-	0x2e, 0x17, 0x48, 0xe2, 0xc8, 0xf0, 0x05, 0xb6, 0x3e, 0x7d, 0x95, 0xe0, 0x33, 0x85, 0x7f, 0x64,
-	0xfc, 0xea, 0x41, 0x70, 0x61, 0xa4, 0xe2, 0xf2, 0x37, 0x86, 0x07, 0x00, 0x0a, 0x65, 0xc1, 0x32,
-	0x1c, 0x32, 0x6a, 0x5d, 0x1b, 0x49, 0xa3, 0xac, 0x5c, 0x53, 0x72, 0x06, 0x9b, 0x99, 0x91, 0x12,
-	0x67, 0x7a, 0xe8, 0x72, 0xfd, 0x5f, 0x9f, 0xab, 0x59, 0x2a, 0xec, 0x2b, 0xa4, 0x50, 0xb3, 0x1f,
-	0xa4, 0x05, 0x3e, 0xa3, 0x36, 0x59, 0x23, 0xf1, 0x19, 0x5d, 0x86, 0xf5, 0x7f, 0x1c, 0xb6, 0x0d,
-	0x75, 0x91, 0xce, 0x27, 0x3c, 0xa5, 0x36, 0x47, 0x33, 0xf9, 0x78, 0x86, 0xbb, 0x50, 0xb3, 0xe4,
-	0x77, 0x97, 0xc1, 0x9b, 0x07, 0xc1, 0x95, 0x1d, 0x45, 0x1e, 0xa1, 0x5e, 0x6e, 0x88, 0x1c, 0x55,
-	0x9b, 0x7d, 0x3d, 0x9c, 0x4e, 0x77, 0x0d, 0xe5, 0xd6, 0x1c, 0xfe, 0xeb, 0x79, 0x27, 0x1e, 0xb9,
-	0x81, 0xe0, 0x4e, 0x4b, 0x4c, 0xa7, 0x64, 0xbf, 0x5a, 0xe6, 0x76, 0xd4, 0x59, 0xd9, 0x75, 0xb3,
-	0xce, 0x8f, 0x1f, 0xba, 0x39, 0xd3, 0x63, 0x33, 0x8a, 0x32, 0x3e, 0x8d, 0x97, 0x70, 0x79, 0xff,
-	0xb1, 0x78, 0xca, 0x63, 0x25, 0x30, 0x1b, 0x05, 0xf6, 0x4f, 0x38, 0x7d, 0x0f, 0x00, 0x00, 0xff,
-	0xff, 0x3e, 0x27, 0x7e, 0x11, 0x23, 0x03, 0x00, 0x00,
+	// 289 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x5f, 0x4b, 0xf3, 0x30,
+	0x14, 0xc6, 0xdf, 0xf4, 0x65, 0x2d, 0x3d, 0x4e, 0x2f, 0x82, 0x68, 0x99, 0x0a, 0xa3, 0x20, 0xf6,
+	0x2a, 0x75, 0xf3, 0x0b, 0x88, 0x43, 0x64, 0x78, 0x23, 0xc5, 0x2b, 0x6f, 0x46, 0x97, 0x84, 0x2e,
+	0x68, 0x9b, 0x90, 0x3f, 0x85, 0x7d, 0x17, 0x2f, 0xfc, 0xa8, 0xb2, 0xb4, 0x32, 0x90, 0x51, 0xbc,
+	0xcb, 0x39, 0xcf, 0xef, 0x3c, 0x79, 0xe0, 0x1c, 0x38, 0x53, 0x5a, 0x5a, 0x69, 0xf2, 0x76, 0x96,
+	0x57, 0x92, 0xdb, 0x0d, 0x27, 0xbe, 0x81, 0x4f, 0x85, 0x24, 0x76, 0xab, 0x9c, 0x91, 0x35, 0xaf,
+	0x4a, 0xd2, 0x69, 0xe9, 0x27, 0x82, 0x70, 0xe1, 0xb4, 0x91, 0x1a, 0xcf, 0x60, 0x64, 0xa5, 0x12,
+	0x34, 0x41, 0x53, 0x94, 0x1d, 0xcd, 0x2f, 0xc8, 0xa1, 0x01, 0xf2, 0xba, 0x43, 0x8a, 0x8e, 0xc4,
+	0x57, 0x00, 0x86, 0xeb, 0x56, 0x50, 0xbe, 0x12, 0x2c, 0x09, 0xa6, 0x28, 0x8b, 0x8b, 0xb8, 0xef,
+	0x2c, 0x19, 0xbe, 0x87, 0x63, 0xea, 0xb4, 0xe6, 0x8d, 0x5d, 0xf1, 0x96, 0x37, 0x36, 0xf9, 0x3f,
+	0xe4, 0xfc, 0xb8, 0x43, 0x8a, 0x71, 0x3f, 0xe1, 0xab, 0x94, 0xc1, 0xc8, 0x3f, 0xf0, 0x09, 0x04,
+	0x82, 0xf9, 0x64, 0x71, 0x11, 0x08, 0xb6, 0x0f, 0x1b, 0xfc, 0x39, 0x6c, 0x02, 0x91, 0x2a, 0xb7,
+	0x1f, 0xb2, 0x64, 0x3e, 0xc7, 0xb8, 0xf8, 0x29, 0xd3, 0x73, 0x18, 0x79, 0xf2, 0xf7, 0x2f, 0xf3,
+	0x2f, 0x04, 0xe1, 0x93, 0xb7, 0xc2, 0x4b, 0x88, 0x5e, 0xb4, 0x64, 0x8e, 0x72, 0x3c, 0x94, 0x7f,
+	0x32, 0x24, 0xa6, 0xff, 0x32, 0x74, 0x8b, 0xf0, 0x33, 0x44, 0x0b, 0xd9, 0x18, 0x57, 0x73, 0x7c,
+	0x79, 0x98, 0xee, 0x36, 0x32, 0x19, 0x54, 0x3b, 0xb3, 0x87, 0x9b, 0xb7, 0xeb, 0x4a, 0xd8, 0x8d,
+	0x5b, 0x13, 0x2a, 0xeb, 0x7c, 0x0f, 0xf7, 0xcb, 0xcf, 0xd5, 0x7b, 0x95, 0x1b, 0xc5, 0xe9, 0x3a,
+	0xf4, 0x67, 0x70, 0xf7, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xcd, 0x62, 0xfc, 0x69, 0x20, 0x02, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -315,8 +217,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type GoetheClient interface {
-	Publish(ctx context.Context, opts ...grpc.CallOption) (Goethe_PublishClient, error)
-	Stream(ctx context.Context, opts ...grpc.CallOption) (Goethe_StreamClient, error)
+	Produce(ctx context.Context, opts ...grpc.CallOption) (Goethe_ProduceClient, error)
+	Consume(ctx context.Context, opts ...grpc.CallOption) (Goethe_ConsumeClient, error)
 }
 
 type goetheClient struct {
@@ -327,61 +229,61 @@ func NewGoetheClient(cc *grpc.ClientConn) GoetheClient {
 	return &goetheClient{cc}
 }
 
-func (c *goetheClient) Publish(ctx context.Context, opts ...grpc.CallOption) (Goethe_PublishClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Goethe_serviceDesc.Streams[0], "/io.typusomega.goethe.Goethe/Publish", opts...)
+func (c *goetheClient) Produce(ctx context.Context, opts ...grpc.CallOption) (Goethe_ProduceClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Goethe_serviceDesc.Streams[0], "/io.typusomega.goethe.Goethe/Produce", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &goethePublishClient{stream}
+	x := &goetheProduceClient{stream}
 	return x, nil
 }
 
-type Goethe_PublishClient interface {
-	Send(*PublishRequest) error
-	Recv() (*PublishResponse, error)
+type Goethe_ProduceClient interface {
+	Send(*Event) error
+	Recv() (*Event, error)
 	grpc.ClientStream
 }
 
-type goethePublishClient struct {
+type goetheProduceClient struct {
 	grpc.ClientStream
 }
 
-func (x *goethePublishClient) Send(m *PublishRequest) error {
+func (x *goetheProduceClient) Send(m *Event) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *goethePublishClient) Recv() (*PublishResponse, error) {
-	m := new(PublishResponse)
+func (x *goetheProduceClient) Recv() (*Event, error) {
+	m := new(Event)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *goetheClient) Stream(ctx context.Context, opts ...grpc.CallOption) (Goethe_StreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Goethe_serviceDesc.Streams[1], "/io.typusomega.goethe.Goethe/Stream", opts...)
+func (c *goetheClient) Consume(ctx context.Context, opts ...grpc.CallOption) (Goethe_ConsumeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Goethe_serviceDesc.Streams[1], "/io.typusomega.goethe.Goethe/Consume", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &goetheStreamClient{stream}
+	x := &goetheConsumeClient{stream}
 	return x, nil
 }
 
-type Goethe_StreamClient interface {
+type Goethe_ConsumeClient interface {
 	Send(*Cursor) error
 	Recv() (*Cursor, error)
 	grpc.ClientStream
 }
 
-type goetheStreamClient struct {
+type goetheConsumeClient struct {
 	grpc.ClientStream
 }
 
-func (x *goetheStreamClient) Send(m *Cursor) error {
+func (x *goetheConsumeClient) Send(m *Cursor) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *goetheStreamClient) Recv() (*Cursor, error) {
+func (x *goetheConsumeClient) Recv() (*Cursor, error) {
 	m := new(Cursor)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -391,70 +293,70 @@ func (x *goetheStreamClient) Recv() (*Cursor, error) {
 
 // GoetheServer is the server API for Goethe service.
 type GoetheServer interface {
-	Publish(Goethe_PublishServer) error
-	Stream(Goethe_StreamServer) error
+	Produce(Goethe_ProduceServer) error
+	Consume(Goethe_ConsumeServer) error
 }
 
 // UnimplementedGoetheServer can be embedded to have forward compatible implementations.
 type UnimplementedGoetheServer struct {
 }
 
-func (*UnimplementedGoetheServer) Publish(srv Goethe_PublishServer) error {
-	return status.Errorf(codes.Unimplemented, "method Publish not implemented")
+func (*UnimplementedGoetheServer) Produce(srv Goethe_ProduceServer) error {
+	return status.Errorf(codes.Unimplemented, "method Produce not implemented")
 }
-func (*UnimplementedGoetheServer) Stream(srv Goethe_StreamServer) error {
-	return status.Errorf(codes.Unimplemented, "method Stream not implemented")
+func (*UnimplementedGoetheServer) Consume(srv Goethe_ConsumeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Consume not implemented")
 }
 
 func RegisterGoetheServer(s *grpc.Server, srv GoetheServer) {
 	s.RegisterService(&_Goethe_serviceDesc, srv)
 }
 
-func _Goethe_Publish_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(GoetheServer).Publish(&goethePublishServer{stream})
+func _Goethe_Produce_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GoetheServer).Produce(&goetheProduceServer{stream})
 }
 
-type Goethe_PublishServer interface {
-	Send(*PublishResponse) error
-	Recv() (*PublishRequest, error)
+type Goethe_ProduceServer interface {
+	Send(*Event) error
+	Recv() (*Event, error)
 	grpc.ServerStream
 }
 
-type goethePublishServer struct {
+type goetheProduceServer struct {
 	grpc.ServerStream
 }
 
-func (x *goethePublishServer) Send(m *PublishResponse) error {
+func (x *goetheProduceServer) Send(m *Event) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *goethePublishServer) Recv() (*PublishRequest, error) {
-	m := new(PublishRequest)
+func (x *goetheProduceServer) Recv() (*Event, error) {
+	m := new(Event)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func _Goethe_Stream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(GoetheServer).Stream(&goetheStreamServer{stream})
+func _Goethe_Consume_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GoetheServer).Consume(&goetheConsumeServer{stream})
 }
 
-type Goethe_StreamServer interface {
+type Goethe_ConsumeServer interface {
 	Send(*Cursor) error
 	Recv() (*Cursor, error)
 	grpc.ServerStream
 }
 
-type goetheStreamServer struct {
+type goetheConsumeServer struct {
 	grpc.ServerStream
 }
 
-func (x *goetheStreamServer) Send(m *Cursor) error {
+func (x *goetheConsumeServer) Send(m *Cursor) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *goetheStreamServer) Recv() (*Cursor, error) {
+func (x *goetheConsumeServer) Recv() (*Cursor, error) {
 	m := new(Cursor)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -468,14 +370,14 @@ var _Goethe_serviceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Publish",
-			Handler:       _Goethe_Publish_Handler,
+			StreamName:    "Produce",
+			Handler:       _Goethe_Produce_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "Stream",
-			Handler:       _Goethe_Stream_Handler,
+			StreamName:    "Consume",
+			Handler:       _Goethe_Consume_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
