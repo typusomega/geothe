@@ -1,7 +1,6 @@
 package storage_test
 
 //go:generate mockgen -package mocks -destination=./../mocks/mock_leveldb.go github.com/typusomega/goethe/pkg/storage LevelDB
-//go:generate mockgen -package mocks -destination=./../mocks/mock_idgenerator.go github.com/typusomega/goethe/pkg/storage IDGenerator
 //go:generate mockgen -package mocks -destination=./../mocks/mock_leveldb_iterator.go github.com/syndtr/goleveldb/leveldb/iterator Iterator
 
 import (
@@ -66,12 +65,12 @@ func TestDiskStorage_Append(t *testing.T) {
 			defer controller.Finish()
 			dbMock := mocks.NewMockLevelDB(controller)
 			idGeneratorMock := mocks.NewMockIDGenerator(controller)
-			idGeneratorMock.EXPECT().Next().Return(generatedID).AnyTimes()
+			idGeneratorMock.EXPECT().Next().Return(generatedID)
 			if tt.given != nil {
 				tt.given(dbMock, nil)
 			}
 
-			it := storage.New(dbMock, idGeneratorMock)
+			it := storage.New(dbMock, idGeneratorMock, storage.NewKeyGenerator())
 			got, err := it.Append(tt.when.event)
 			tt.then(got, err)
 		})
@@ -144,11 +143,13 @@ func TestDiskStorage_Read(t *testing.T) {
 			dbMock := mocks.NewMockLevelDB(controller)
 			iteratorMock := mocks.NewMockIterator(controller)
 			dbMock.EXPECT().NewIterator(gomock.Any(), gomock.Any()).Return(iteratorMock).AnyTimes()
+			idGeneratorMock := mocks.NewMockIDGenerator(controller)
+			idGeneratorMock.EXPECT().Next().Return(generatedID).AnyTimes()
 			if tt.given != nil {
 				tt.given(dbMock, iteratorMock)
 			}
 
-			it := storage.New(dbMock, nil)
+			it := storage.New(dbMock, idGeneratorMock, storage.NewKeyGenerator())
 			got, err := it.Read(tt.when.cursor)
 			tt.then(got, err)
 		})
@@ -157,8 +158,7 @@ func TestDiskStorage_Read(t *testing.T) {
 
 func TestDiskStorage_GetCursorFor(t *testing.T) {
 	type args struct {
-		serviceID string
-		topic     string
+		cursor *spec.Cursor
 	}
 	tests := []struct {
 		name  string
@@ -171,7 +171,7 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 			given: func(db *mocks.MockLevelDB) {
 				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, leveldb.ErrNotFound).Times(1)
 			},
-			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			when: args{cursor: &defaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.NotNil(t, err)
 				assert.True(t, errorx.HasTrait(err, errorx.NotFound()))
@@ -182,7 +182,7 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 			given: func(db *mocks.MockLevelDB) {
 				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, errDefault).Times(1)
 			},
-			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			when: args{cursor: &defaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.Equal(t, errDefault, err)
 			},
@@ -192,7 +192,7 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 			given: func(db *mocks.MockLevelDB) {
 				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(marshalledDefaultCursor(), nil).Times(1)
 			},
-			when: args{serviceID: defaultServiceID, topic: defaultTopic.GetId()},
+			when: args{cursor: &defaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.Nil(t, err)
 				assertCursorEquals(t, &defaultCursor, cursor)
@@ -209,8 +209,8 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 				tt.given(dbMock)
 			}
 
-			it := storage.New(dbMock, nil)
-			got, err := it.GetCursorFor(tt.when.serviceID, tt.when.topic)
+			it := storage.New(dbMock, storage.NewIDGenerator(), storage.NewKeyGenerator())
+			got, err := it.GetCursorFor(&defaultCursor)
 			tt.then(got, err)
 		})
 	}
@@ -266,7 +266,7 @@ func TestDiskStorage_SaveCursor(t *testing.T) {
 				tt.given(dbMock)
 			}
 
-			it := storage.New(dbMock, nil)
+			it := storage.New(dbMock, storage.NewIDGenerator(), storage.NewKeyGenerator())
 			err := it.SaveCursor(tt.when.cursor)
 			tt.then(err)
 		})
@@ -285,9 +285,8 @@ func assertCursorEquals(t *testing.T, expected *spec.Cursor, actual *spec.Cursor
 }
 
 var errDefault = fmt.Errorf("fail")
-var generatedID = "123456789"
 var defaultServiceID = "service1"
-
+var generatedID = "1234567"
 var defaultTopic = spec.Topic{
 	Id: "default",
 }
@@ -298,8 +297,8 @@ var defaultEvent = spec.Event{
 	Payload: []byte("123"),
 }
 
-var defaultCursorEventKey = []byte(defaultCursor.GetTopic().GetId() + storage.KeySeperator + defaultCursor.GetCurrentEvent().GetId())
-var defaultCursorCursorKey = []byte(storage.CursorPrefix + storage.KeySeperator + defaultCursor.GetConsumer() + storage.KeySeperator + defaultCursor.GetTopic().GetId())
+var defaultCursorEventKey = storage.NewKeyGenerator().Event(defaultCursor.GetCurrentEvent())
+var defaultCursorCursorKey = storage.NewKeyGenerator().Cursor(&defaultCursor)
 
 func marshalledExpectedEvent() []byte {
 	bytes, err := proto.Marshal(&expectedEvent)

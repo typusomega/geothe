@@ -2,7 +2,7 @@ package storage
 
 import (
 	"io"
-	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/joomcode/errorx"
@@ -21,8 +21,12 @@ type EventStorage interface {
 }
 
 type CursorStorage interface {
-	GetCursorFor(consumer string, topic string) (*spec.Cursor, error)
+	GetCursorFor(cursor *spec.Cursor) (*spec.Cursor, error)
 	SaveCursor(cursor *spec.Cursor) error
+}
+
+type EventIndex interface {
+	GetNearest(timestamp time.Time) (*spec.Event, error)
 }
 
 type CombinedStorage interface {
@@ -30,13 +34,8 @@ type CombinedStorage interface {
 	CursorStorage
 }
 
-func New(db LevelDB, idGenerator IDGenerator) CombinedStorage {
-	return &DiskStorage{db: db, ids: idGenerator}
-}
-
-type DiskStorage struct {
-	db  LevelDB
-	ids IDGenerator
+func New(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator) CombinedStorage {
+	return &DiskStorage{db: db, ids: idGenerator, keys: keyGenerator}
 }
 
 type LevelDB interface {
@@ -56,7 +55,7 @@ func (it *DiskStorage) Append(event *spec.Event) (*spec.Event, error) {
 	}
 
 	batch := new(leveldb.Batch)
-	batch.Put(eventKeyFromEvent(eventToStore), serializedEvent)
+	batch.Put(it.keys.Event(eventToStore), serializedEvent)
 
 	err = it.db.Write(batch, nil)
 	if err != nil {
@@ -72,7 +71,7 @@ func (it *DiskStorage) Read(cursor *spec.Cursor) (*spec.Cursor, error) {
 
 	if cursor.GetCurrentEvent() != nil && cursor.GetCurrentEvent().GetId() != "" {
 		logrus.Debug("seeking to cursor position")
-		if ok := iterator.Seek(eventKeyFromCursor(cursor)); !ok {
+		if ok := iterator.Seek(it.keys.Event(cursor.GetCurrentEvent())); !ok {
 			return cursor, errors.NotFound.New("could not find event for cursor: %v", cursor)
 		}
 	}
@@ -82,12 +81,12 @@ func (it *DiskStorage) Read(cursor *spec.Cursor) (*spec.Cursor, error) {
 			return cursor, errors.ResourceExhaustedError.New("no more events in topic: '%v'", cursor.GetTopic())
 		}
 
-		topic, err := TopicFromKey(iterator.Key())
+		event, err := it.keys.KeyToEvent(iterator.Key())
 		if err != nil {
 			return cursor, err
 		}
 
-		if topic != cursor.GetTopic().GetId() {
+		if event.GetTopic().GetId() != cursor.GetTopic().GetId() {
 			continue
 		}
 
@@ -104,15 +103,15 @@ func (it *DiskStorage) Read(cursor *spec.Cursor) (*spec.Cursor, error) {
 	}
 }
 
-func (it *DiskStorage) GetCursorFor(consumer string, topic string) (*spec.Cursor, error) {
-	cursor, err := it.db.Get(cursorKey(consumer, topic), nil)
+func (it *DiskStorage) GetCursorFor(cursor *spec.Cursor) (*spec.Cursor, error) {
+	foundCursor, err := it.db.Get(it.keys.Cursor(cursor), nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			return nil, errors.NotFound.New("could not find cursor for: [%v, %v]", consumer, topic)
+			return nil, errors.NotFound.New("could not find cursor: %v", cursor)
 		}
 		return nil, err
 	}
-	return deserializeCursor(cursor)
+	return deserializeCursor(foundCursor)
 }
 
 func (it *DiskStorage) SaveCursor(cursor *spec.Cursor) error {
@@ -122,7 +121,7 @@ func (it *DiskStorage) SaveCursor(cursor *spec.Cursor) error {
 	}
 
 	batch := new(leveldb.Batch)
-	batch.Put(cursorKeyFromCursor(cursor), serializedCursor)
+	batch.Put(it.keys.Cursor(cursor), serializedCursor)
 
 	err = it.db.Write(batch, nil)
 	if err != nil {
@@ -132,29 +131,8 @@ func (it *DiskStorage) SaveCursor(cursor *spec.Cursor) error {
 	return nil
 }
 
-func eventKeyFromEvent(event *spec.Event) []byte {
-	return []byte(event.GetTopic().GetId() + KeySeperator + event.GetId())
-}
-
-func eventKeyFromCursor(cursor *spec.Cursor) []byte {
-	return []byte(cursor.GetTopic().GetId() + KeySeperator + cursor.GetCurrentEvent().GetId())
-}
-
-func cursorKey(consumer string, topic string) []byte {
-	return []byte(CursorPrefix + KeySeperator + consumer + KeySeperator + topic)
-}
-
-func cursorKeyFromCursor(cursor *spec.Cursor) []byte {
-	return cursorKey(cursor.GetTopic().GetId(), cursor.GetConsumer())
-}
-
-func TopicFromKey(key []byte) (string, error) {
-	stringKey := string(key)
-	topicEnd := strings.Index(stringKey, ":")
-	if topicEnd <= 0 {
-		return "", errorx.IllegalState.New("could not extract topic from key: %v", stringKey)
-	}
-	return stringKey[:topicEnd], nil
+func (it *DiskStorage) GetNearest(timestamp time.Time) (*spec.Event, error) {
+	return nil, nil
 }
 
 func serializeEvent(event *spec.Event) ([]byte, error) {
@@ -191,5 +169,8 @@ func deserializeCursor(serialized []byte) (*spec.Cursor, error) {
 	return cursor, nil
 }
 
-const KeySeperator = ":"
-const CursorPrefix = "CURSOR"
+type DiskStorage struct {
+	db   LevelDB
+	ids  IDGenerator
+	keys KeyGenerator
+}

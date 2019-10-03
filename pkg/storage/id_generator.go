@@ -9,6 +9,10 @@ type IDGenerator interface {
 	Next() string
 }
 
+func NewIDGenerator() IDGenerator {
+	return UnixNanoIDGenerator{}
+}
+
 type UnixNanoIDGenerator struct{}
 
 func (UnixNanoIDGenerator) Next() string {

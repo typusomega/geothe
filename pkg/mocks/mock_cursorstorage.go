@@ -35,18 +35,18 @@ func (m *MockCursorStorage) EXPECT() *MockCursorStorageMockRecorder {
 }
 
 // GetCursorFor mocks base method
-func (m *MockCursorStorage) GetCursorFor(arg0, arg1 string) (*spec.Cursor, error) {
+func (m *MockCursorStorage) GetCursorFor(arg0 *spec.Cursor) (*spec.Cursor, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCursorFor", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetCursorFor", arg0)
 	ret0, _ := ret[0].(*spec.Cursor)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCursorFor indicates an expected call of GetCursorFor
-func (mr *MockCursorStorageMockRecorder) GetCursorFor(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockCursorStorageMockRecorder) GetCursorFor(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCursorFor", reflect.TypeOf((*MockCursorStorage)(nil).GetCursorFor), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCursorFor", reflect.TypeOf((*MockCursorStorage)(nil).GetCursorFor), arg0)
 }
 
 // SaveCursor mocks base method

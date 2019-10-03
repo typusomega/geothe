@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	store := storage.New(db, &storage.UnixNanoIDGenerator{})
+	store := storage.New(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
 	producer := api.NewProducer(store)
 	consumer := api.NewConsumer(store, store)
 	apiServer := api.New(producer, consumer)
