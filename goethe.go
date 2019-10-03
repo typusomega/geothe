@@ -34,9 +34,10 @@ func main() {
 		panic(err)
 	}
 
-	store := storage.New(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
-	producer := api.NewProducer(store)
-	consumer := api.NewConsumer(store, store)
+	eventStore := storage.NewEvents(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
+	cursorStore := storage.NewCursors(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
+	producer := api.NewProducer(eventStore)
+	consumer := api.NewConsumer(cursorStore, eventStore)
 	apiServer := api.New(producer, consumer)
 	grpcServer := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
