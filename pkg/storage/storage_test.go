@@ -216,6 +216,63 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 	}
 }
 
+func TestDiskStorage_SaveCursor(t *testing.T) {
+	type args struct {
+		cursor *spec.Cursor
+	}
+	tests := []struct {
+		name  string
+		given func(db *mocks.MockLevelDB)
+		when  args
+		then  func(err error)
+	}{
+		{
+			name: "db write failure",
+			given: func(db *mocks.MockLevelDB) {
+				db.EXPECT().Write(gomock.Any(), gomock.Any()).DoAndReturn(
+					func(batch *leveldb.Batch, wo *opt.WriteOptions) error {
+						assert.Equal(t, batch.Len(), 1)
+						return errDefault
+					}).Times(1)
+			},
+			when: args{cursor: &defaultCursor},
+			then: func(err error) {
+				assert.NotNil(t, err)
+				assert.True(t, errorx.IsOfType(err, errorx.RejectedOperation))
+			},
+		},
+		{
+			name: "save success",
+			given: func(db *mocks.MockLevelDB) {
+				db.EXPECT().Write(gomock.Any(), gomock.Any()).DoAndReturn(
+					func(batch *leveldb.Batch, wo *opt.WriteOptions) error {
+						assert.Equal(t, batch.Len(), 1)
+						return nil
+					}).Times(1)
+			},
+			when: args{cursor: &defaultCursor},
+			then: func(err error) {
+				assert.Nil(t, err)
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			controller := gomock.NewController(t)
+			defer controller.Finish()
+			dbMock := mocks.NewMockLevelDB(controller)
+			if tt.given != nil {
+				tt.given(dbMock)
+			}
+
+			it := storage.New(dbMock, nil)
+			err := it.SaveCursor(tt.when.cursor)
+			tt.then(err)
+		})
+	}
+}
+
 func assertEventEquals(t *testing.T, expected *spec.Event, actual *spec.Event) {
 	assert.Equal(t, expected.GetId(), actual.GetId())
 	assert.Equal(t, expected.GetTopic().GetId(), actual.GetTopic().GetId())
