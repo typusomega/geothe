@@ -85,6 +85,8 @@ func (it *ConsumeCommand) Execute(args []string) error {
 	ctx, cncl := context.WithCancel(context.Background())
 	defer cncl()
 
+	lastEvent := it.Positionals.LastEvent
+
 	cursors := make(chan *spec.Cursor)
 	go func() {
 		for {
@@ -92,6 +94,7 @@ func (it *ConsumeCommand) Execute(args []string) error {
 			case <-ctx.Done():
 				return
 			case cursor := <-cursors:
+				lastEvent = cursor.GetCurrentEvent().GetId()
 				println(fmt.Sprintf("%v", cursor))
 			}
 		}
@@ -102,7 +105,7 @@ func (it *ConsumeCommand) Execute(args []string) error {
 			Topic:    &spec.Topic{Id: it.Topic},
 			Consumer: it.Consumer,
 			CurrentEvent: &spec.Event{
-				Id:    it.Positionals.LastEvent,
+				Id:    lastEvent,
 				Topic: &spec.Topic{Id: it.Topic},
 			},
 		}, cursors)
