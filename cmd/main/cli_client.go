@@ -102,7 +102,8 @@ func (it *ConsumeCommand) Execute(args []string) error {
 			Topic:    &spec.Topic{Id: it.Topic},
 			Consumer: it.Consumer,
 			CurrentEvent: &spec.Event{
-				Id: it.Positionals.LastEvent,
+				Id:    it.Positionals.LastEvent,
+				Topic: &spec.Topic{Id: it.Topic},
 			},
 		}, cursors)
 		if err != nil {

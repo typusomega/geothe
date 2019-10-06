@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	api "github.com/typusomega/goethe/pkg/api"
 	spec "github.com/typusomega/goethe/pkg/spec"
 )
 
@@ -34,17 +35,31 @@ func (m *MockConsumer) EXPECT() *MockConsumerMockRecorder {
 	return m.recorder
 }
 
-// Consume mocks base method
-func (m *MockConsumer) Consume(arg0 *spec.Cursor) (*spec.Cursor, error) {
+// Commit mocks base method
+func (m *MockConsumer) Commit(arg0 *spec.Cursor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Consume", arg0)
-	ret0, _ := ret[0].(*spec.Cursor)
+	ret := m.ctrl.Call(m, "Commit", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Commit indicates an expected call of Commit
+func (mr *MockConsumerMockRecorder) Commit(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockConsumer)(nil).Commit), arg0)
+}
+
+// GetIterator mocks base method
+func (m *MockConsumer) GetIterator(arg0 *spec.Cursor) (api.ConsumerIterator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIterator", arg0)
+	ret0, _ := ret[0].(api.ConsumerIterator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Consume indicates an expected call of Consume
-func (mr *MockConsumerMockRecorder) Consume(arg0 interface{}) *gomock.Call {
+// GetIterator indicates an expected call of GetIterator
+func (mr *MockConsumerMockRecorder) GetIterator(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Consume", reflect.TypeOf((*MockConsumer)(nil).Consume), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIterator", reflect.TypeOf((*MockConsumer)(nil).GetIterator), arg0)
 }

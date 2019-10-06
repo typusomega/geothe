@@ -28,10 +28,10 @@ func TestBasic(t *testing.T) {
 	}
 
 	t.Log("starting basic e2e test")
-	ctx, cncl := context.WithCancel(context.Background())
+	ctx, cncl := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cncl()
 
-	lastEvent := 100000
+	lastEvent := 10000
 	publishTimestamps := make([]int64, lastEvent)
 	consumptionTimestamps := make([]int64, lastEvent)
 
@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 	t.Log("starting consumption")
 	go func() {
 		for {
-			err = consumer.ConsumeBlocking(ctx, &spec.Cursor{Topic: topic, Consumer: "default"}, cursors)
+			err = consumer.ConsumeBlocking(ctx, &spec.Cursor{Topic: topic, Consumer: "default", CurrentEvent: &spec.Event{Topic: topic}}, cursors)
 			if err != nil {
 				if err == io.EOF {
 					continue
@@ -90,7 +90,7 @@ func TestBasic(t *testing.T) {
 		case cursor := <-cursors:
 			value, err := strconv.Atoi(string(cursor.GetCurrentEvent().GetPayload()))
 			assert.Nil(t, err)
-			assert.Equal(t, lastValue+1, value)
+			assert.True(t, lastValue+1 == value || lastValue == value)
 			lastValue = value
 			consumptionTimestamps[lastValue] = time.Now().UnixNano()
 

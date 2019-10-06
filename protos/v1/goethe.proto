@@ -5,7 +5,7 @@ package io.typusomega.goethe;
 option go_package = "github.com/typusomega/goethe/pkg/spec";
 
 service Goethe {
-    rpc Produce(stream Event) returns (stream Event) {}
+    rpc Produce(Event) returns (Event) {}
     rpc Consume(stream Cursor) returns (stream Cursor) {}
 }
 

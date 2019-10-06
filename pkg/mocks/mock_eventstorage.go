@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	spec "github.com/typusomega/goethe/pkg/spec"
+	storage "github.com/typusomega/goethe/pkg/storage"
 )
 
 // MockEventStorage is a mock of EventStorage interface
@@ -49,17 +50,17 @@ func (mr *MockEventStorageMockRecorder) Append(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Append", reflect.TypeOf((*MockEventStorage)(nil).Append), arg0)
 }
 
-// Read mocks base method
-func (m *MockEventStorage) Read(arg0 *spec.Cursor) (*spec.Cursor, error) {
+// GetIterator mocks base method
+func (m *MockEventStorage) GetIterator(arg0 *spec.Event) (storage.EventsIterator, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", arg0)
-	ret0, _ := ret[0].(*spec.Cursor)
+	ret := m.ctrl.Call(m, "GetIterator", arg0)
+	ret0, _ := ret[0].(storage.EventsIterator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Read indicates an expected call of Read
-func (mr *MockEventStorageMockRecorder) Read(arg0 interface{}) *gomock.Call {
+// GetIterator indicates an expected call of GetIterator
+func (mr *MockEventStorageMockRecorder) GetIterator(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockEventStorage)(nil).Read), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIterator", reflect.TypeOf((*MockEventStorage)(nil).GetIterator), arg0)
 }

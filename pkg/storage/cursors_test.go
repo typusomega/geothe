@@ -11,6 +11,7 @@ import (
 	"github.com/typusomega/goethe/pkg/mocks"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
+	"github.com/typusomega/goethe/pkg/testhelpers"
 )
 
 func TestDiskStorage_GetCursorFor(t *testing.T) {
@@ -26,9 +27,9 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 		{
 			name: "cursor not found",
 			given: func(db *mocks.MockLevelDB) {
-				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, leveldb.ErrNotFound).Times(1)
+				db.EXPECT().Get(gomock.Eq(testhelpers.DefaultCursorCursorKey), gomock.Any()).Return(nil, leveldb.ErrNotFound).Times(1)
 			},
-			when: args{cursor: &defaultCursor},
+			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.NotNil(t, err)
 				assert.True(t, errorx.HasTrait(err, errorx.NotFound()))
@@ -37,22 +38,22 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 		{
 			name: "unknown error",
 			given: func(db *mocks.MockLevelDB) {
-				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(nil, errDefault).Times(1)
+				db.EXPECT().Get(gomock.Eq(testhelpers.DefaultCursorCursorKey), gomock.Any()).Return(nil, testhelpers.ErrDefault).Times(1)
 			},
-			when: args{cursor: &defaultCursor},
+			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
-				assert.Equal(t, errDefault, err)
+				assert.Equal(t, testhelpers.ErrDefault, err)
 			},
 		},
 		{
 			name: "cursor found",
 			given: func(db *mocks.MockLevelDB) {
-				db.EXPECT().Get(gomock.Eq(defaultCursorCursorKey), gomock.Any()).Return(marshalledDefaultCursor(), nil).Times(1)
+				db.EXPECT().Get(gomock.Eq(testhelpers.DefaultCursorCursorKey), gomock.Any()).Return(testhelpers.MarshalledDefaultCursor(), nil).Times(1)
 			},
-			when: args{cursor: &defaultCursor},
+			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.Nil(t, err)
-				assertCursorEquals(t, &defaultCursor, cursor)
+				testhelpers.AssertCursorEquals(t, &testhelpers.DefaultCursor, cursor)
 			},
 		},
 	}
@@ -67,7 +68,7 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 			}
 
 			it := storage.NewCursors(dbMock, storage.NewIDGenerator(), storage.NewKeyGenerator())
-			got, err := it.GetCursorFor(&defaultCursor)
+			got, err := it.GetCursorFor(&testhelpers.DefaultCursor)
 			tt.then(got, err)
 		})
 	}
@@ -89,10 +90,10 @@ func TestDiskStorage_SaveCursor(t *testing.T) {
 				db.EXPECT().Write(gomock.Any(), gomock.Any()).DoAndReturn(
 					func(batch *leveldb.Batch, wo *opt.WriteOptions) error {
 						assert.Equal(t, batch.Len(), 1)
-						return errDefault
+						return testhelpers.ErrDefault
 					}).Times(1)
 			},
-			when: args{cursor: &defaultCursor},
+			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(err error) {
 				assert.NotNil(t, err)
 				assert.True(t, errorx.IsOfType(err, errorx.RejectedOperation))
@@ -107,7 +108,7 @@ func TestDiskStorage_SaveCursor(t *testing.T) {
 						return nil
 					}).Times(1)
 			},
-			when: args{cursor: &defaultCursor},
+			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(err error) {
 				assert.Nil(t, err)
 			},

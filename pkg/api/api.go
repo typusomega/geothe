@@ -1,11 +1,11 @@
 package api
 
 import (
+	"context"
 	"io"
 
 	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
-	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,45 +20,57 @@ func New(producer Producer, consumer Consumer) API {
 	return &api{producer: producer, consumer: consumer}
 }
 
-// Publish is a bidi-stream publish command
-func (it *api) Produce(stream spec.Goethe_ProduceServer) error {
-	for {
-		select {
-		case <-stream.Context().Done():
-			return nil
-		default:
-			event, err := stream.Recv()
-			exit, err := handleStreamError(err)
-			if exit {
-				return err
-			}
+// Produce produces the given event
+func (it *api) Produce(ctx context.Context, event *spec.Event) (*spec.Event, error) {
+	logrus.Debugf("received publish request for event: '%v'", event)
 
-			logrus.Debugf("received publish request for event: '%v'", event)
-
-			if err = verifyProduceEvent(event); err != nil {
-				return err
-			}
-
-			producedEvent, err := it.producer.Produce(event)
-			if err != nil {
-				logrus.WithError(err).Errorf("could not store event: '%v' in topic: '%v'", event, event.GetTopic())
-				return status.Newf(codes.Internal, "could not store event: '%v' in topic: '%v'", event, event.GetTopic()).Err()
-			}
-
-			err = stream.Send(producedEvent)
-			if err != nil {
-				logrus.WithError(err).Error("could not send response to client")
-				return err
-			}
-
-			logrus.Debug("successfully stored event")
-		}
+	if err := verifyProduceEvent(event); err != nil {
+		return nil, err
 	}
+
+	producedEvent, err := it.producer.Produce(event)
+	if err != nil {
+		logrus.WithError(err).Errorf("could not store event: '%v' in topic: '%v'", event, event.GetTopic())
+		return nil, status.Newf(codes.Internal, "could not store event: '%v' in topic: '%v'", event, event.GetTopic()).Err()
+	}
+
+	logrus.Debug("successfully stored event")
+	return producedEvent, nil
 }
 
-// Stream is a bidi-stream read command
+// Consume is a bidi-stream consumption command
 func (it *api) Consume(stream spec.Goethe_ConsumeServer) error {
+	cursor, err := stream.Recv()
+
+	exit, err := handleStreamError(err)
+	if exit {
+		return err
+	}
+
+	if err = verifyCursor(cursor); err != nil {
+		return err
+	}
+
+	iterator, err := it.consumer.GetIterator(cursor)
+	if err != nil {
+		if errorx.HasTrait(err, errorx.NotFound()) {
+			return status.Newf(codes.ResourceExhausted, "no more events in topic: %v", cursor.GetTopic()).Err()
+		}
+		return status.New(codes.Internal, err.Error()).Err()
+	}
+
 	for {
+		newCursor, err := iterator.Value()
+		if err != nil {
+			return err
+		}
+
+		err = stream.Send(newCursor)
+		if err != nil {
+			logrus.WithError(err).Error("could not send response to client")
+			return err
+		}
+
 		select {
 		case <-stream.Context().Done():
 			return nil
@@ -75,15 +87,12 @@ func (it *api) Consume(stream spec.Goethe_ConsumeServer) error {
 			return err
 		}
 
-		newCursor, err := it.consumer.Consume(cursor)
-		if err = handleReadError(newCursor, err); err != nil {
-			return err
+		if err = it.consumer.Commit(cursor); err != nil {
+			logrus.WithError(err).Warn("could not commit cursor")
 		}
 
-		err = stream.Send(newCursor)
-		if err != nil {
-			logrus.WithError(err).Error("could not send response to client")
-			return err
+		if ok := iterator.Next(); !ok {
+			return status.Newf(codes.ResourceExhausted, "no more events in topic: %v", cursor.GetTopic()).Err()
 		}
 	}
 }
@@ -109,21 +118,6 @@ func verifyCursor(cursor *spec.Cursor) error {
 		return status.New(codes.InvalidArgument, "cursor's topic must be set").Err()
 	}
 
-	return nil
-}
-
-func handleReadError(cursor *spec.Cursor, err error) error {
-	if err != nil {
-		if errorx.HasTrait(err, errorx.NotFound()) {
-			logrus.WithError(err).Info("client cursor not found")
-			return status.New(codes.NotFound, err.Error()).Err()
-		}
-		if errorx.HasTrait(err, errors.ResourceExhausted()) {
-			logrus.WithError(err).Debugf("service '%v' exhausted topic '%v'", cursor.GetConsumer(), cursor.GetTopic())
-			return status.New(codes.ResourceExhausted, err.Error()).Err()
-		}
-		return status.New(codes.Internal, err.Error()).Err()
-	}
 	return nil
 }
 

@@ -29,21 +29,10 @@ type client struct {
 }
 
 func (it *client) Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) (*spec.Event, error) {
-	publishStream, err := it.service.Produce(ctx)
+	event, err := it.service.Produce(ctx, &spec.Event{Topic: topic, Payload: eventContent})
 	if err != nil {
 		return nil, err
 	}
-
-	err = publishStream.Send(&spec.Event{Topic: topic, Payload: eventContent})
-	if err != nil {
-		return nil, err
-	}
-
-	event, err := publishStream.Recv()
-	if err != nil {
-		return nil, err
-	}
-
 	return event, nil
 }
 
@@ -74,22 +63,23 @@ func (it *client) ConsumeBlocking(ctx context.Context, startCursor *spec.Cursor,
 
 	lastCursor := startCursor
 	for {
+		err = readStream.Send(lastCursor)
+		if err != nil {
+			return err
+		}
+
+		newCursor, err := readStream.Recv()
+		if err != nil {
+			return err
+		}
+
+		lastCursor = newCursor
+
 		select {
 		case <-ctx.Done():
 			return nil
-		default:
-			err = readStream.Send(lastCursor)
-			if err != nil {
-				return err
-			}
-
-			newCursor, err := readStream.Recv()
-			if err != nil {
-				return err
-			}
-
-			lastCursor = newCursor
-			out <- newCursor
+		case out <- newCursor:
+			continue
 		}
 	}
 }
