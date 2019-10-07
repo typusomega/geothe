@@ -77,7 +77,6 @@ func TestBasic(t *testing.T) {
 				}
 			}
 		}
-
 	}()
 
 	lastValue := -1

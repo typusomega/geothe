@@ -36,7 +36,7 @@ func main() {
 
 	eventStore := storage.NewEvents(db, storage.NewIDGenerator(), storage.NewKeyGenerator(), storage.NewMetrics())
 	cursorStore := storage.NewCursors(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
-	producer := api.NewProducer(eventStore)
+	producer := api.NewProducer(eventStore, api.NewMetrics())
 	consumer := api.NewConsumer(cursorStore, eventStore)
 	apiServer := api.New(producer, consumer)
 	grpcServer := grpc.NewServer(

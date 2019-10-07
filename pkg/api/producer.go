@@ -9,14 +9,20 @@ type Producer interface {
 	Produce(event *spec.Event) (*spec.Event, error)
 }
 
-func NewProducer(eventStorage storage.EventStorage) Producer {
-	return &producer{events: eventStorage}
+func NewProducer(eventStorage storage.EventStorage, metrics Metrics) Producer {
+	return &producer{events: eventStorage, metrics: metrics}
 }
 
 func (it *producer) Produce(event *spec.Event) (*spec.Event, error) {
-	return it.events.Append(event)
+	event, err := it.events.Append(event)
+	if err != nil {
+		return nil, err
+	}
+	it.metrics.EventProduced(event.GetTopic().GetId())
+	return event, err
 }
 
 type producer struct {
-	events storage.EventStorage
+	events  storage.EventStorage
+	metrics Metrics
 }
