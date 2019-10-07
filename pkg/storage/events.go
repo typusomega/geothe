@@ -27,8 +27,8 @@ type EventStorage interface {
 	GetIterator(event *spec.Event) (EventsIterator, error)
 }
 
-func NewEvents(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator) EventStorage {
-	return &eventStorage{db: db, ids: idGenerator, keys: keyGenerator}
+func NewEvents(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator, metrics Metrics) EventStorage {
+	return &eventStorageMetricsDecorator{inner: &eventStorage{db: db, ids: idGenerator, keys: keyGenerator}, metrics: metrics}
 }
 
 func (it *eventStorage) Append(event *spec.Event) (*spec.Event, error) {
@@ -107,4 +107,17 @@ type eventStorage struct {
 	db   LevelDB
 	ids  IDGenerator
 	keys KeyGenerator
+}
+
+func (it *eventStorageMetricsDecorator) Append(event *spec.Event) (*spec.Event, error) {
+	return it.metrics.MeasurePersistEvent(func() (*spec.Event, error) { return it.inner.Append(event) })
+}
+
+func (it *eventStorageMetricsDecorator) GetIterator(event *spec.Event) (EventsIterator, error) {
+	return it.metrics.MeasureGetIterator(func() (EventsIterator, error) { return it.inner.GetIterator(event) })
+}
+
+type eventStorageMetricsDecorator struct {
+	inner   EventStorage
+	metrics Metrics
 }
