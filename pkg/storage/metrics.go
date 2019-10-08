@@ -10,20 +10,25 @@ const subsystem = "storage"
 
 // Metrics provides metrics over the storage performance
 type Metrics interface {
-	MeasurePersistEvent(call func() (*spec.Event, error)) (*spec.Event, error)
+	// MeasureAppendEvent measures duration and success rate of appending events
+	MeasureAppendEvent(call func() (*spec.Event, error)) (*spec.Event, error)
+	// MeasureGetIterator measures duration and success rate of iterator retrieval
 	MeasureGetIterator(call func() (EventsIterator, error)) (EventsIterator, error)
 }
 
-func (it *storageMetrics) MeasurePersistEvent(call func() (*spec.Event, error)) (*spec.Event, error) {
-	timer := prometheus.NewTimer(it.persistEventDurations)
-	it.persistEventRequests.Inc()
+// MeasureAppendEvent measures duration and success rate of appending events
+func (it *storageMetrics) MeasureAppendEvent(call func() (*spec.Event, error)) (*spec.Event, error) {
+	timer := prometheus.NewTimer(it.appendEventDurations)
+	it.appendEventRequests.Inc()
 	ret, err := call()
 	timer.ObserveDuration()
 	if err != nil {
-		it.persistEventErrors.Inc()
+		it.appendEventErrors.Inc()
 	}
 	return ret, err
 }
+
+// MeasureGetIterator measures duration and success rate of iterator retrieval
 func (it *storageMetrics) MeasureGetIterator(call func() (EventsIterator, error)) (EventsIterator, error) {
 	timer := prometheus.NewTimer(it.getIteratorDurations)
 	it.getIteratorRequests.Inc()
@@ -37,26 +42,26 @@ func (it *storageMetrics) MeasureGetIterator(call func() (EventsIterator, error)
 
 // NewMetrics ctor.
 func NewMetrics() Metrics {
-	persistEventDurations := prometheus.NewHistogram(prometheus.HistogramOpts{
+	appendEventDurations := prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
-		Name:      "persist_event_duration_histogram",
-		Help:      "indicates how long it takes to persist an event",
+		Name:      "append_event_duration_histogram",
+		Help:      "indicates how long it takes to append an event",
 		Buckets:   []float64{0.0001, 0.001, 0.002, 0.005, 0.01, 0.05, 0.1, 0.5, 1},
 	})
 
-	persistEventRequests := prometheus.NewCounter(prometheus.CounterOpts{
+	appendEventRequests := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
-		Name:      "persist_event_requests_total",
-		Help:      "the number of persist event requests",
+		Name:      "append_event_requests_total",
+		Help:      "the number of append event requests",
 	})
 
-	persistEventErrors := prometheus.NewCounter(prometheus.CounterOpts{
+	appendEventErrors := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: subsystem,
-		Name:      "persist_event_errors_total",
-		Help:      "the number of failed persist event requests",
+		Name:      "append_event_errors_total",
+		Help:      "the number of failed append event requests",
 	})
 
 	getIteratorDurations := prometheus.NewHistogram(prometheus.HistogramOpts{
@@ -81,29 +86,29 @@ func NewMetrics() Metrics {
 		Help:      "the number of failed get iterator requests",
 	})
 
-	prometheus.MustRegister(persistEventDurations)
-	prometheus.MustRegister(persistEventRequests)
-	prometheus.MustRegister(persistEventErrors)
+	prometheus.MustRegister(appendEventDurations)
+	prometheus.MustRegister(appendEventRequests)
+	prometheus.MustRegister(appendEventErrors)
 
 	prometheus.MustRegister(getIteratorDurations)
 	prometheus.MustRegister(getIteratorRequests)
 	prometheus.MustRegister(getIteratorErrors)
 
 	return &storageMetrics{
-		persistEventDurations: persistEventDurations,
-		persistEventRequests:  persistEventRequests,
-		persistEventErrors:    persistEventErrors,
-		getIteratorDurations:  getIteratorDurations,
-		getIteratorRequests:   getIteratorRequests,
-		getIteratorErrors:     getIteratorErrors,
+		appendEventDurations: appendEventDurations,
+		appendEventRequests:  appendEventRequests,
+		appendEventErrors:    appendEventErrors,
+		getIteratorDurations: getIteratorDurations,
+		getIteratorRequests:  getIteratorRequests,
+		getIteratorErrors:    getIteratorErrors,
 	}
 }
 
 type storageMetrics struct {
-	persistEventDurations prometheus.Histogram
-	persistEventRequests  prometheus.Counter
-	persistEventErrors    prometheus.Counter
-	getIteratorDurations  prometheus.Histogram
-	getIteratorRequests   prometheus.Counter
-	getIteratorErrors     prometheus.Counter
+	appendEventDurations prometheus.Histogram
+	appendEventRequests  prometheus.Counter
+	appendEventErrors    prometheus.Counter
+	getIteratorDurations prometheus.Histogram
+	getIteratorRequests  prometheus.Counter
+	getIteratorErrors    prometheus.Counter
 }

@@ -7,12 +7,18 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Client is used to produce and consume events from Goethe.
 type Client interface {
+	// Produce creates an event with the given eventContent in the given topic.
 	Produce(ctx context.Context, topic *spec.Topic, eventContent []byte) (*spec.Event, error)
+	// ConsumeNext retrieves the event following the given cursor.
 	ConsumeNext(ctx context.Context, cursor *spec.Cursor) (*spec.Cursor, error)
+	// ConsumeBlocking consumes events starting from the given cursor for as long as no errors occur.
+	// Cursors (containing the events) can be retrieved from the given out channel.
 	ConsumeBlocking(ctx context.Context, cursor *spec.Cursor, out chan *spec.Cursor) error
 }
 
+// New ctor.
 func New(ctx context.Context, serverAddress string) (Client, error) {
 	conn, err := grpc.Dial(serverAddress, grpc.WithInsecure())
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// API is the goethe grpc API
 type API interface {
 	spec.GoetheServer
 }
@@ -140,7 +141,6 @@ func handleStreamError(err error) (bool, error) {
 	}
 }
 
-// api is the implementation of the grpc api
 type api struct {
 	producer Producer
 	consumer Consumer

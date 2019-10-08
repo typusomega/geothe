@@ -67,7 +67,7 @@ func Test_eventStorage_Append(t *testing.T) {
 				tt.given(dbMock, nil)
 			}
 
-			it := storage.NewEvents(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
+			it := storage.NewEventStorage(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
 			got, err := it.Append(tt.when.event)
 			tt.then(got, err)
 		})
@@ -131,7 +131,7 @@ func Test_eventStorage_GetIterator(t *testing.T) {
 				tt.given(dbMock, iteratorMock)
 			}
 
-			it := storage.NewEvents(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
+			it := storage.NewEventStorage(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
 			got, err := it.GetIterator(tt.when.event)
 			tt.then(got, err)
 		})
@@ -198,7 +198,7 @@ func Test_eventsIterator_Next(t *testing.T) {
 				tt.given(iteratorMock)
 			}
 
-			eventStorage := storage.NewEvents(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
+			eventStorage := storage.NewEventStorage(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
 			iterator, err := eventStorage.GetIterator(&testhelpers.DefaultEvent)
 			assert.Nil(t, err)
 
@@ -246,7 +246,7 @@ func Test_eventsIterator_Value(t *testing.T) {
 				tt.given(iteratorMock)
 			}
 
-			eventStorage := storage.NewEvents(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
+			eventStorage := storage.NewEventStorage(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
 			iterator, err := eventStorage.GetIterator(&testhelpers.DefaultEvent)
 			assert.Nil(t, err)
 
@@ -283,7 +283,7 @@ func Test_eventsIterator_Close(t *testing.T) {
 				tt.given(iteratorMock)
 			}
 
-			eventStorage := storage.NewEvents(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
+			eventStorage := storage.NewEventStorage(dbMock, idGeneratorMock, storage.NewKeyGenerator(), metrics)
 			iterator, err := eventStorage.GetIterator(&testhelpers.DefaultEvent)
 			assert.Nil(t, err)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/typusomega/goethe/pkg/spec"
 )
 
+// EventsIterator is used to iterate over events in the log
 type EventsIterator interface {
 	io.Closer
 
@@ -22,15 +23,21 @@ type EventsIterator interface {
 	Next() bool
 }
 
+// EventStorage persists and retrieves events.
 type EventStorage interface {
+	// Append appends the given event to the log.
 	Append(event *spec.Event) (*spec.Event, error)
+	// GetIterator creates an iterator pointing to the given event.
+	// EventsIterator.Value() will retrieves the given event.
 	GetIterator(event *spec.Event) (EventsIterator, error)
 }
 
-func NewEvents(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator, metrics Metrics) EventStorage {
+// NewEventStorage ctor.
+func NewEventStorage(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator, metrics Metrics) EventStorage {
 	return &eventStorageMetricsDecorator{inner: &eventStorage{db: db, ids: idGenerator, keys: keyGenerator}, metrics: metrics}
 }
 
+// Append appends the given event to the log.
 func (it *eventStorage) Append(event *spec.Event) (*spec.Event, error) {
 	topic := event.GetTopic()
 	eventToStore := &spec.Event{Id: it.ids.Next(), Topic: topic, Payload: event.GetPayload()}
@@ -51,6 +58,8 @@ func (it *eventStorage) Append(event *spec.Event) (*spec.Event, error) {
 	return eventToStore, nil
 }
 
+// GetIterator creates an iterator pointing to the given event.
+// EventsIterator.Value() will retrieves the given event.
 func (it *eventStorage) GetIterator(event *spec.Event) (EventsIterator, error) {
 	if event.GetTopic().GetId() == "" {
 		return nil, errorx.IllegalArgument.New("topic must be set")
@@ -76,6 +85,8 @@ type eventsIterator struct {
 	keys  KeyGenerator
 }
 
+// Next moves the iterator to the next event.
+// It returns false if the iterator is exhausted.
 func (it *eventsIterator) Next() bool {
 	for {
 		if ok := it.inner.Next(); !ok {
@@ -94,6 +105,7 @@ func (it *eventsIterator) Next() bool {
 	}
 }
 
+// Value returns the current event or nil if done.
 func (it *eventsIterator) Value() (*spec.Event, error) {
 	return deserializeEvent(it.inner.Value())
 }
@@ -110,7 +122,7 @@ type eventStorage struct {
 }
 
 func (it *eventStorageMetricsDecorator) Append(event *spec.Event) (*spec.Event, error) {
-	return it.metrics.MeasurePersistEvent(func() (*spec.Event, error) { return it.inner.Append(event) })
+	return it.metrics.MeasureAppendEvent(func() (*spec.Event, error) { return it.inner.Append(event) })
 }
 
 func (it *eventStorageMetricsDecorator) GetIterator(event *spec.Event) (EventsIterator, error) {

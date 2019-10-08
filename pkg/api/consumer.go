@@ -8,8 +8,13 @@ import (
 	"github.com/typusomega/goethe/pkg/storage"
 )
 
+// Consumer proxies a consumer.
 type Consumer interface {
+	// GetIterator creates an iterator pointing to the given cursor.
+	// ConsumerIterator.Value() will retrieves the given cursor.
+	// If the given Cursor has no|empty CurrentEvent.ID set, the last known consumer's cursor position is used.
 	GetIterator(from *spec.Cursor) (ConsumerIterator, error)
+	// Commit marks the event as successfully handled by the consumer.
 	Commit(cursor *spec.Cursor) error
 }
 
@@ -24,6 +29,7 @@ type ConsumerIterator interface {
 	Next() bool
 }
 
+// NewConsumer ctor.
 func NewConsumer(cursors storage.CursorStorage, events storage.EventStorage) Consumer {
 	return &consumer{
 		cursors: cursors,
@@ -60,6 +66,7 @@ func (it *consumer) GetIterator(from *spec.Cursor) (ConsumerIterator, error) {
 	return NewIterator(*from.GetTopic(), from.GetConsumer(), inner, it.cursors), nil
 }
 
+// NewIterator ctor.
 func NewIterator(topic spec.Topic, consumer string, inner storage.EventsIterator, cursors storage.CursorStorage) ConsumerIterator {
 	return &consumerIterator{
 		topic:    topic,

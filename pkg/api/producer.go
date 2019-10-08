@@ -5,10 +5,13 @@ import (
 	"github.com/typusomega/goethe/pkg/storage"
 )
 
+// Producer proxies producer capabilities.
 type Producer interface {
+	// Produce produces the given event.
 	Produce(event *spec.Event) (*spec.Event, error)
 }
 
+// NewProducer ctor.
 func NewProducer(eventStorage storage.EventStorage, metrics Metrics) Producer {
 	return &producer{events: eventStorage, metrics: metrics}
 }

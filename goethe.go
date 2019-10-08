@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	eventStore := storage.NewEvents(db, storage.NewIDGenerator(), storage.NewKeyGenerator(), storage.NewMetrics())
+	eventStore := storage.NewEventStorage(db, storage.NewIDGenerator(), storage.NewKeyGenerator(), storage.NewMetrics())
 	cursorStore := storage.NewCursors(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
 	producer := api.NewProducer(eventStore, api.NewMetrics())
 	consumer := api.NewConsumer(cursorStore, eventStore)

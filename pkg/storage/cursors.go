@@ -7,11 +7,15 @@ import (
 	"github.com/typusomega/goethe/pkg/spec"
 )
 
+// CursorStorage persists and retrieves cursors.
 type CursorStorage interface {
+	// GetCursorFor retrieves the given cursor.
 	GetCursorFor(cursor *spec.Cursor) (*spec.Cursor, error)
+	// SaveCursor persists the given cursor.
 	SaveCursor(cursor *spec.Cursor) error
 }
 
+// NewCursors ctor.
 func NewCursors(db LevelDB, idGenerator IDGenerator, keyGenerator KeyGenerator) CursorStorage {
 	return &cursorStorage{db: db, ids: idGenerator, keys: keyGenerator}
 }
