@@ -1,3 +1,7 @@
+[![GoDoc](https://godoc.org/github.com/typusomega/goethe?status.svg)](http://godoc.org/github.com/typusomega/goethe)
+[![Go Report](https://goreportcard.com/badge/github.com/typusomega/goethe)](https://goreportcard.com/report/github.com/typusomega/goethe)
+
+
 # Goethe
 
 Goethe is a lightweight append-only event log server. It's meant to be used in event driven systems to enable patterns like event sourcing.
