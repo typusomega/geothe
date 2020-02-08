@@ -20,6 +20,7 @@ type Consumer interface {
 	Commit(cursor *spec.Cursor) error
 }
 
+// A ConsumerIterator is used to move the consumer's cursor.
 type ConsumerIterator interface {
 	io.Closer
 
