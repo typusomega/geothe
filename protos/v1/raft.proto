@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package io.typusomega.goethe;
+
+option go_package = "github.com/typusomega/goethe/pkg/spec";
+
+import "google/protobuf/empty.proto";
+import "public.proto";
+
+service Raft {
+    rpc Join (JoinRequest) returns (google.protobuf.Empty) {
+    }
+}
+
+message RaftLog {
+    oneof event {
+        CursorMoved cursor_moved = 2;
+        EventProduced event_produced = 3;
+    }
+}
+
+message JoinRequest {
+    string node_address = 1;
+    int32 node_port = 2;
+}
+
+message EventProduced {
+    io.typusomega.goethe.Event event = 1;
+}
+
+message CursorMoved {
+    io.typusomega.goethe.Cursor cursor = 1;
+}

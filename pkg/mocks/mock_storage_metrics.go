@@ -35,6 +35,21 @@ func (m *MockStorageMetrics) EXPECT() *MockStorageMetricsMockRecorder {
 	return m.recorder
 }
 
+// MeasureAppendEvent mocks base method
+func (m *MockStorageMetrics) MeasureAppendEvent(arg0 func() (*spec.Event, error)) (*spec.Event, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MeasureAppendEvent", arg0)
+	ret0, _ := ret[0].(*spec.Event)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MeasureAppendEvent indicates an expected call of MeasureAppendEvent
+func (mr *MockStorageMetricsMockRecorder) MeasureAppendEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MeasureAppendEvent", reflect.TypeOf((*MockStorageMetrics)(nil).MeasureAppendEvent), arg0)
+}
+
 // MeasureGetIterator mocks base method
 func (m *MockStorageMetrics) MeasureGetIterator(arg0 func() (storage.EventsIterator, error)) (storage.EventsIterator, error) {
 	m.ctrl.T.Helper()
@@ -48,19 +63,4 @@ func (m *MockStorageMetrics) MeasureGetIterator(arg0 func() (storage.EventsItera
 func (mr *MockStorageMetricsMockRecorder) MeasureGetIterator(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MeasureGetIterator", reflect.TypeOf((*MockStorageMetrics)(nil).MeasureGetIterator), arg0)
-}
-
-// MeasurePersistEvent mocks base method
-func (m *MockStorageMetrics) MeasurePersistEvent(arg0 func() (*spec.Event, error)) (*spec.Event, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MeasurePersistEvent", arg0)
-	ret0, _ := ret[0].(*spec.Event)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MeasurePersistEvent indicates an expected call of MeasurePersistEvent
-func (mr *MockStorageMetricsMockRecorder) MeasurePersistEvent(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MeasurePersistEvent", reflect.TypeOf((*MockStorageMetrics)(nil).MeasurePersistEvent), arg0)
 }

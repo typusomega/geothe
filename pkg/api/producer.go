@@ -1,8 +1,10 @@
 package api
 
 import (
+	"github.com/typusomega/goethe/pkg/errors"
+	"github.com/typusomega/goethe/pkg/metrics"
+	"github.com/typusomega/goethe/pkg/raft"
 	"github.com/typusomega/goethe/pkg/spec"
-	"github.com/typusomega/goethe/pkg/storage"
 )
 
 // Producer proxies producer capabilities.
@@ -12,20 +14,20 @@ type Producer interface {
 }
 
 // NewProducer ctor.
-func NewProducer(eventStorage storage.EventStorage, metrics Metrics) Producer {
-	return &producer{events: eventStorage, metrics: metrics}
+func NewProducer(cluster raft.Cluster, metrics metrics.Metrics) Producer {
+	return &producer{cluster: cluster, metrics: metrics}
 }
 
 func (it *producer) Produce(event *spec.Event) (*spec.Event, error) {
-	event, err := it.events.Append(event)
-	if err != nil {
-		return nil, err
+	if err := it.cluster.CommitEvent(event); err != nil {
+		it.metrics.EventProductionFailed(event.GetTopic().GetId())
+		return nil, errors.Internal.Wrap(err, "could not commit event in raft cluster")
 	}
 	it.metrics.EventProduced(event.GetTopic().GetId())
-	return event, err
+	return event, nil
 }
 
 type producer struct {
-	events  storage.EventStorage
-	metrics Metrics
+	metrics metrics.Metrics
+	cluster raft.Cluster
 }

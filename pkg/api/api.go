@@ -6,10 +6,11 @@ import (
 
 	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
-	"github.com/typusomega/goethe/pkg/errors"
-	"github.com/typusomega/goethe/pkg/spec"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/typusomega/goethe/pkg/errors"
+	"github.com/typusomega/goethe/pkg/spec"
 )
 
 // API is the goethe grpc API

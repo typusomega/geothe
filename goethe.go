@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/typusomega/goethe/pkg/api"
 	"github.com/typusomega/goethe/pkg/config"
+	"github.com/typusomega/goethe/pkg/metrics"
+	"github.com/typusomega/goethe/pkg/raft"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
 )
@@ -24,21 +27,27 @@ var mainLog = logrus.WithField("name", "main")
 func main() {
 	cfg := config.Get()
 
-	address := fmt.Sprintf(":%d", cfg.Port)
+	address := fmt.Sprintf(":%d", cfg.APIPort)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		mainLog.Fatalf("could not create listener on address: %s", address)
 	}
 
-	db, err := leveldb.OpenFile(cfg.StorageFile, nil)
+	db, err := leveldb.OpenFile(cfg.DataDir, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	eventStore := storage.NewEventStorage(db, storage.NewIDGenerator(), storage.NewKeyGenerator(), storage.NewMetrics())
 	cursorStore := storage.NewCursors(db, storage.NewIDGenerator(), storage.NewKeyGenerator())
-	producer := api.NewProducer(eventStore, api.NewMetrics())
-	consumer := api.NewConsumer(cursorStore, eventStore)
+	raftCluster, err := raft.NewCluster(context.Background(), cfg, raft.NewFSM(cursorStore, eventStore))
+	if err != nil {
+		panic(err)
+	}
+
+	producer := api.NewProducer(raftCluster, metrics.NewMetrics())
+	consumer := api.NewConsumer(raftCluster, cursorStore, eventStore)
+
 	apiServer := api.New(producer, consumer)
 	grpcServer := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
@@ -49,6 +58,7 @@ func main() {
 		)),
 	)
 	spec.RegisterGoetheServer(grpcServer, apiServer)
+	spec.RegisterRaftServer(grpcServer, raft.NewClusterAPI(raftCluster))
 	grpc_prometheus.Register(grpcServer)
 
 	go startPrometheusServer(cfg)

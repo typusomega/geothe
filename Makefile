@@ -41,7 +41,6 @@ fmt:
 		$(Q)goimports -w .
 
 mocks:
-		$(Q)go get github.com/golang/mock/gomock
 		$(Q)command -v mockgen || GO111MODULE=off go get github.com/golang/mock/mockgen
 		$(Q)go generate ./...
 

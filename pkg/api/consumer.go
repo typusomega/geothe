@@ -5,6 +5,7 @@ import (
 
 	"github.com/joomcode/errorx"
 	"github.com/typusomega/goethe/pkg/errors"
+	"github.com/typusomega/goethe/pkg/raft"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
 )
@@ -31,15 +32,16 @@ type ConsumerIterator interface {
 }
 
 // NewConsumer ctor.
-func NewConsumer(cursors storage.CursorStorage, events storage.EventStorage) Consumer {
+func NewConsumer(cluster raft.Cluster, cursors storage.CursorStorage, events storage.EventStorage) Consumer {
 	return &consumer{
+		cluster: cluster,
 		cursors: cursors,
 		events:  events,
 	}
 }
 
 func (it *consumer) Commit(cursor *spec.Cursor) error {
-	return it.cursors.SaveCursor(cursor)
+	return it.cluster.CommitCursor(cursor)
 }
 
 func (it *consumer) GetIterator(from *spec.Cursor) (ConsumerIterator, error) {
@@ -107,4 +109,5 @@ type consumerIterator struct {
 type consumer struct {
 	cursors storage.CursorStorage
 	events  storage.EventStorage
+	cluster raft.Cluster
 }

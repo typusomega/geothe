@@ -1,0 +1,29 @@
+version: "3.3"
+services:
+  goethe-0:
+    image: goethe
+    environment:
+      LOG_LEVEL: DEBUG
+
+      RAFT_NODE_NAME: goethe-0
+      RAFT_BOOTSTRAP: 'true'
+      RAFT_BOOTSTRAP_NODE: ''
+    ports:
+      - "1337:1337"
+      - "1338:1338"
+
+  goethe-1:
+    image: goethe
+    environment:
+      LOG_LEVEL: DEBUG
+
+      RAFT_NODE_NAME: goethe-1
+      RAFT_BOOTSTRAP_NODE: goethe-0:1337
+
+  goethe-2:
+    image: goethe
+    environment:
+      LOG_LEVEL: DEBUG
+
+      RAFT_NODE_NAME: goethe-2
+      RAFT_BOOTSTRAP_NODE: goethe-0:1337
