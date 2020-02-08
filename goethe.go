@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
+
 	"github.com/typusomega/goethe/pkg/api"
 	"github.com/typusomega/goethe/pkg/config"
 	"github.com/typusomega/goethe/pkg/spec"

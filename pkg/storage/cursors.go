@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"github.com/joomcode/errorx"
 	"github.com/syndtr/goleveldb/leveldb"
+
 	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 )
@@ -42,7 +42,7 @@ func (it *cursorStorage) SaveCursor(cursor *spec.Cursor) error {
 
 	err = it.db.Write(batch, nil)
 	if err != nil {
-		return errorx.RejectedOperation.New("could not write cursor: [%v, %v]", cursor.GetConsumer(), cursor.GetTopic().GetId())
+		return errors.Internal.Wrap(err, "could not write cursor: [%v, %v]", cursor.GetConsumer(), cursor.GetTopic().GetId())
 	}
 
 	return nil

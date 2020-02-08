@@ -6,6 +6,7 @@ import (
 
 	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
+	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,7 +55,7 @@ func (it *api) Consume(stream spec.Goethe_ConsumeServer) error {
 
 	iterator, err := it.consumer.GetIterator(cursor)
 	if err != nil {
-		if errorx.HasTrait(err, errorx.NotFound()) {
+		if errorx.HasTrait(err, errors.NotFoundTrait) {
 			return status.Newf(codes.ResourceExhausted, "no more events in topic: %v", cursor.GetTopic()).Err()
 		}
 		return status.New(codes.Internal, err.Error()).Err()

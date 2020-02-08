@@ -83,7 +83,7 @@ func Test_consumer_GetIterator(t *testing.T) {
 			when:  args{cursor: &spec.Cursor{}},
 			then: func(iterator api.ConsumerIterator, err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.IsOfType(err, errorx.IllegalArgument))
+				assert.True(t, errorx.IsOfType(err, errors.InvalidArgument))
 			},
 		},
 		{

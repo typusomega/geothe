@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/joomcode/errorx"
+	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
 )
@@ -43,13 +44,13 @@ func (it *consumer) Commit(cursor *spec.Cursor) error {
 
 func (it *consumer) GetIterator(from *spec.Cursor) (ConsumerIterator, error) {
 	if from.GetTopic() == nil || from.GetTopic().GetId() == "" {
-		return nil, errorx.IllegalArgument.New("cursor's topic id must be set")
+		return nil, errors.InvalidArgument.New("cursor.topic id must be set")
 	}
 
 	cursorToUse := from
 	if from.GetCurrentEvent().GetId() == "" {
 		cursorFound, err := it.cursors.GetCursorFor(from)
-		if err != nil && !errorx.HasTrait(err, errorx.NotFound()) {
+		if err != nil && !errorx.HasTrait(err, errors.NotFoundTrait) {
 			return nil, err
 		}
 

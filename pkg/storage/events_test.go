@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/mocks"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
@@ -51,7 +52,7 @@ func Test_eventStorage_Append(t *testing.T) {
 			when: args{event: &testhelpers.DefaultEvent},
 			then: func(event *spec.Event, err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.IsOfType(err, errorx.RejectedOperation))
+				assert.True(t, errorx.IsOfType(err, errors.Internal))
 			},
 		},
 	}
@@ -90,7 +91,7 @@ func Test_eventStorage_GetIterator(t *testing.T) {
 			when:  args{},
 			then: func(iterator storage.EventsIterator, err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.IsOfType(err, errorx.IllegalArgument))
+				assert.True(t, errorx.IsOfType(err, errors.InvalidArgument))
 			},
 		},
 		{
@@ -102,7 +103,7 @@ func Test_eventStorage_GetIterator(t *testing.T) {
 			when: args{event: &testhelpers.DefaultEvent},
 			then: func(iterator storage.EventsIterator, err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.HasTrait(err, errorx.NotFound()))
+				assert.True(t, errorx.HasTrait(err, errors.NotFoundTrait))
 			},
 		},
 		{

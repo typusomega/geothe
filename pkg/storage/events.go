@@ -3,10 +3,10 @@ package storage
 import (
 	"io"
 
-	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
+
 	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 )
@@ -52,7 +52,7 @@ func (it *eventStorage) Append(event *spec.Event) (*spec.Event, error) {
 
 	err = it.db.Write(batch, nil)
 	if err != nil {
-		return nil, errorx.RejectedOperation.New("could not write event: [%v, %v]", topic, eventToStore)
+		return nil, errors.Internal.New("could not write event: [%v, %v]", topic, eventToStore)
 	}
 
 	return eventToStore, nil
@@ -62,7 +62,7 @@ func (it *eventStorage) Append(event *spec.Event) (*spec.Event, error) {
 // EventsIterator.Value() will retrieves the given event.
 func (it *eventStorage) GetIterator(event *spec.Event) (EventsIterator, error) {
 	if event.GetTopic().GetId() == "" {
-		return nil, errorx.IllegalArgument.New("topic must be set")
+		return nil, errors.InvalidArgument.New("event.topic must be set")
 	}
 
 	iterator := it.db.NewIterator(nil, nil)

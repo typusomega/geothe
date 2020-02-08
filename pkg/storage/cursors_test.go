@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/mocks"
 	"github.com/typusomega/goethe/pkg/spec"
 	"github.com/typusomega/goethe/pkg/storage"
@@ -32,7 +33,7 @@ func TestDiskStorage_GetCursorFor(t *testing.T) {
 			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(cursor *spec.Cursor, err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.HasTrait(err, errorx.NotFound()))
+				assert.True(t, errorx.HasTrait(err, errors.NotFoundTrait))
 			},
 		},
 		{
@@ -96,7 +97,7 @@ func TestDiskStorage_SaveCursor(t *testing.T) {
 			when: args{cursor: &testhelpers.DefaultCursor},
 			then: func(err error) {
 				assert.NotNil(t, err)
-				assert.True(t, errorx.IsOfType(err, errorx.RejectedOperation))
+				assert.True(t, errorx.IsOfType(err, errors.Internal))
 			},
 		},
 		{

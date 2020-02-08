@@ -3,7 +3,7 @@ package storage
 import (
 	"strings"
 
-	"github.com/joomcode/errorx"
+	"github.com/typusomega/goethe/pkg/errors"
 	"github.com/typusomega/goethe/pkg/spec"
 )
 
@@ -39,7 +39,7 @@ func (keyGenerator) KeyToEvent(key []byte) (*spec.Event, error) {
 	stringKey := string(key)
 	parts := strings.Split(stringKey, keySeperator)
 	if len(parts) != 3 {
-		return nil, errorx.IllegalState.New("could not extract topic from key: %v", stringKey)
+		return nil, errors.FailedPrecondition.New("could not extract topic from key: %v", stringKey)
 	}
 
 	return &spec.Event{
