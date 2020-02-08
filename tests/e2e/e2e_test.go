@@ -50,7 +50,7 @@ func TestBasic(t *testing.T) {
 		for index := 0; index < lastEvent; index++ {
 			start := time.Now()
 			_, err := publisher.Produce(ctx, topic, []byte(strconv.Itoa(index)))
-			produceDurations[index] = float64(time.Since(start).Microseconds())
+			produceDurations[index] = float64(time.Since(start).Nanoseconds() / 1000)
 			assert.Nil(t, err)
 		}
 	}()
@@ -90,7 +90,7 @@ func TestBasic(t *testing.T) {
 
 		case cursor := <-cursors:
 			value, err := strconv.Atoi(string(cursor.GetCurrentEvent().GetPayload()))
-			consumptionDurations[value] = float64(time.Since(start).Microseconds())
+			consumptionDurations[value] = float64(time.Since(start).Nanoseconds() / 1000)
 			assert.Nil(t, err)
 			assert.True(t, lastValue+1 == value || lastValue == value)
 			lastValue = value
