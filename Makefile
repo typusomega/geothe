@@ -24,7 +24,8 @@ test:
 		$(Q)go test ./...
 
 spec:
-		$(Q)protoc --go_out=plugins=grpc:../../../. protos/v1/goethe.proto
+		$(Q)command -v protoc-gen-go || GO111MODULE=off go get github.com/golang/protobuf/protoc-gen-go
+		$(Q)protoc -I protos/v1 --go_out=plugins=grpc:../../../. protos/v1/*.proto
 
 verify: lint test
 
@@ -52,5 +53,11 @@ changelog:
 update-golden:
 		$(Q)go test ./test -update
 
+cli:
+		$(Q)$(GOARGS) go build -gcflags "all=-trimpath=${GOPATH}" -asmflags "all=-trimpath=${GOPATH}" -o ./artifacts/cli ./cmd/main/cli_client.go
+
 build:
 		$(Q)$(GOARGS) go build -gcflags "all=-trimpath=${GOPATH}" -asmflags "all=-trimpath=${GOPATH}" -o ./artifacts/goethe ./goethe.go
+
+docker: build
+		$(Q)docker build -t goethe .
